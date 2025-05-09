@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 90;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -34,9 +34,22 @@
 		55FB97B22DCDECB20094B3B8 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		55FB97B52DCDEE8F0094B3B8 /* Exceptions for "EatsOrder" folder in "EatsOrder" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 55FB97872DCDEB3B0094B3B8 /* EatsOrder */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		55FB978A2DCDEB3B0094B3B8 /* EatsOrder */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				55FB97B52DCDEE8F0094B3B8 /* Exceptions for "EatsOrder" folder in "EatsOrder" target */,
+			);
 			path = EatsOrder;
 			sourceTree = "<group>";
 		};
@@ -55,24 +68,18 @@
 /* Begin PBXFrameworksBuildPhase section */
 		55FB97852DCDEB3B0094B3B8 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		55FB97922DCDEB3D0094B3B8 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		55FB979C2DCDEB3D0094B3B8 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
@@ -111,14 +118,10 @@
 			);
 			buildRules = (
 			);
-			dependencies = (
-			);
 			fileSystemSynchronizedGroups = (
 				55FB978A2DCDEB3B0094B3B8 /* EatsOrder */,
 			);
 			name = EatsOrder;
-			packageProductDependencies = (
-			);
 			productName = EatsOrder;
 			productReference = 55FB97882DCDEB3B0094B3B8 /* EatsOrder.app */;
 			productType = "com.apple.product-type.application";
@@ -140,8 +143,6 @@
 				55FB97982DCDEB3D0094B3B8 /* EatsOrderTests */,
 			);
 			name = EatsOrderTests;
-			packageProductDependencies = (
-			);
 			productName = EatsOrderTests;
 			productReference = 55FB97952DCDEB3D0094B3B8 /* EatsOrderTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -163,8 +164,6 @@
 				55FB97A22DCDEB3D0094B3B8 /* EatsOrderUITests */,
 			);
 			name = EatsOrderUITests;
-			packageProductDependencies = (
-			);
 			productName = EatsOrderUITests;
 			productReference = 55FB979F2DCDEB3D0094B3B8 /* EatsOrderUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
@@ -201,7 +200,7 @@
 			);
 			mainGroup = 55FB977F2DCDEB3B0094B3B8;
 			minimizedProjectReferenceProxies = 1;
-			preferredProjectObjectVersion = 77;
+			preferredProjectObjectVersion = 90;
 			productRefGroup = 55FB97892DCDEB3B0094B3B8 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -216,49 +215,37 @@
 /* Begin PBXResourcesBuildPhase section */
 		55FB97862DCDEB3B0094B3B8 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				55FB97B32DCDECB20094B3B8 /* .gitignore in Resources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		55FB97932DCDEB3D0094B3B8 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		55FB979D2DCDEB3D0094B3B8 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		55FB97842DCDEB3B0094B3B8 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		55FB97912DCDEB3D0094B3B8 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		55FB979B2DCDEB3D0094B3B8 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
@@ -276,7 +263,7 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		55FB97A72DCDEB3D0094B3B8 /* Debug */ = {
+		55FB97A72DCDEB3D0094B3B8 /* Debug configuration for PBXProject "EatsOrder" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -340,7 +327,7 @@
 			};
 			name = Debug;
 		};
-		55FB97A82DCDEB3D0094B3B8 /* Release */ = {
+		55FB97A82DCDEB3D0094B3B8 /* Release configuration for PBXProject "EatsOrder" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -397,7 +384,7 @@
 			};
 			name = Release;
 		};
-		55FB97AA2DCDEB3D0094B3B8 /* Debug */ = {
+		55FB97AA2DCDEB3D0094B3B8 /* Debug configuration for PBXNativeTarget "EatsOrder" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -407,11 +394,15 @@
 				DEVELOPMENT_TEAM = R99J2N4P84;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = EatsOrder/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "잇츠오더(한수빈)";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.food-and-drink";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -419,13 +410,17 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.taylor.EatsOrder;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
-		55FB97AB2DCDEB3D0094B3B8 /* Release */ = {
+		55FB97AB2DCDEB3D0094B3B8 /* Release configuration for PBXNativeTarget "EatsOrder" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -435,11 +430,15 @@
 				DEVELOPMENT_TEAM = R99J2N4P84;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = EatsOrder/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "잇츠오더(한수빈)";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.food-and-drink";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -447,13 +446,17 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.taylor.EatsOrder;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
-		55FB97AD2DCDEB3D0094B3B8 /* Debug */ = {
+		55FB97AD2DCDEB3D0094B3B8 /* Debug configuration for PBXNativeTarget "EatsOrderTests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
@@ -472,7 +475,7 @@
 			};
 			name = Debug;
 		};
-		55FB97AE2DCDEB3D0094B3B8 /* Release */ = {
+		55FB97AE2DCDEB3D0094B3B8 /* Release configuration for PBXNativeTarget "EatsOrderTests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
@@ -491,7 +494,7 @@
 			};
 			name = Release;
 		};
-		55FB97B02DCDEB3D0094B3B8 /* Debug */ = {
+		55FB97B02DCDEB3D0094B3B8 /* Debug configuration for PBXNativeTarget "EatsOrderUITests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
@@ -508,7 +511,7 @@
 			};
 			name = Debug;
 		};
-		55FB97B12DCDEB3D0094B3B8 /* Release */ = {
+		55FB97B12DCDEB3D0094B3B8 /* Release configuration for PBXNativeTarget "EatsOrderUITests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
@@ -531,37 +534,33 @@
 		55FB97832DCDEB3B0094B3B8 /* Build configuration list for PBXProject "EatsOrder" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				55FB97A72DCDEB3D0094B3B8 /* Debug */,
-				55FB97A82DCDEB3D0094B3B8 /* Release */,
+				55FB97A72DCDEB3D0094B3B8 /* Debug configuration for PBXProject "EatsOrder" */,
+				55FB97A82DCDEB3D0094B3B8 /* Release configuration for PBXProject "EatsOrder" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		55FB97A92DCDEB3D0094B3B8 /* Build configuration list for PBXNativeTarget "EatsOrder" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				55FB97AA2DCDEB3D0094B3B8 /* Debug */,
-				55FB97AB2DCDEB3D0094B3B8 /* Release */,
+				55FB97AA2DCDEB3D0094B3B8 /* Debug configuration for PBXNativeTarget "EatsOrder" */,
+				55FB97AB2DCDEB3D0094B3B8 /* Release configuration for PBXNativeTarget "EatsOrder" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		55FB97AC2DCDEB3D0094B3B8 /* Build configuration list for PBXNativeTarget "EatsOrderTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				55FB97AD2DCDEB3D0094B3B8 /* Debug */,
-				55FB97AE2DCDEB3D0094B3B8 /* Release */,
+				55FB97AD2DCDEB3D0094B3B8 /* Debug configuration for PBXNativeTarget "EatsOrderTests" */,
+				55FB97AE2DCDEB3D0094B3B8 /* Release configuration for PBXNativeTarget "EatsOrderTests" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		55FB97AF2DCDEB3D0094B3B8 /* Build configuration list for PBXNativeTarget "EatsOrderUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				55FB97B02DCDEB3D0094B3B8 /* Debug */,
-				55FB97B12DCDEB3D0094B3B8 /* Release */,
+				55FB97B02DCDEB3D0094B3B8 /* Debug configuration for PBXNativeTarget "EatsOrderUITests" */,
+				55FB97B12DCDEB3D0094B3B8 /* Release configuration for PBXNativeTarget "EatsOrderUITests" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
