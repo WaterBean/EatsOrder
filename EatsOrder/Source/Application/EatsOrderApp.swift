@@ -9,9 +9,11 @@ import SwiftUI
 
 @main
 struct EatsOrderApp: App {
+  @StateObject var authModel = AuthModel(service: .shared)
   var body: some Scene {
     WindowGroup {
       ContentView()
+        .environmentObject(authModel)
     }
   }
 }

@@ -8,17 +8,28 @@
 import SwiftUI
 
 struct ContentView: View {
+  @State var isShowSignInScreen = false
   var body: some View {
+    
     VStack {
-      Image(systemName: "globe")
-        .imageScale(.large)
-        .foregroundStyle(.tint)
       Text(Environments.apiKey)
+      
+      Button {
+        isShowSignInScreen.toggle()
+      } label: {
+        Text("로그인하기")
+      }
+
     }
     .padding()
+    .fullScreenCover(isPresented: $isShowSignInScreen) {
+      SignInScreen()
+    }
   }
 }
 
+#if DEBUG
 #Preview {
   ContentView()
 }
+#endif
