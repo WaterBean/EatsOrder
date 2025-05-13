@@ -9,7 +9,7 @@ import SwiftUI
 
 @main
 struct EatsOrderApp: App {
-  @StateObject var authModel = AuthModel(service: .shared)
+  @StateObject var authModel = AuthModel(service: NetworkService(session: URLSession.shared), tokenManager: TokenManager())
   var body: some Scene {
     WindowGroup {
       ContentView()

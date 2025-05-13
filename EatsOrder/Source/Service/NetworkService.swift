@@ -12,12 +12,6 @@ final class NetworkService: NetworkProtocol {
   let session: URLSessionProtocol
   private var middleware: [Middleware] = []
   
-  static let shared: NetworkService = {
-    let config = URLSessionConfiguration.default
-    let session = URLSession(configuration: config)
-    return NetworkService(session: session)
-  }()
-  
   init(session: URLSessionProtocol) {
     self.session = session
   }

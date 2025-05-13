@@ -244,51 +244,29 @@ extension EmailSignUpScreen {
   
   // 회원가입 기능
   private func signUp() {
-    // 모든 필드 최종 유효성 검사
-    validateAllFields()
-    
     // 폼이 유효하지 않으면 중단
-    guard state.isFormValid else { return }
+    guard state.isFormValid else { print("검증 실패"); return }
     
     state.isLoading = true
     
-    // 회원가입 API 호출 (실제로는 AuthModel의 signUp 메서드 호출)
+    // 회원가입 API 호출
     Task {
-      do {
-        // 실제 구현에서는 아래 코드의 주석을 해제하고 사용
-        // try await authModel.signUp(
-        //   email: state.email,
-        //   password: state.password,
-        //   nick: state.nick,
-        //   phoneNum: state.phoneNum.isEmpty ? nil : state.phoneNum
-        // )
-        
-        // 임시 지연 (실제 구현에서는 제거)
-        try await Task.sleep(nanoseconds: 1_500_000_000)
-        
+        await authModel.join(
+          email: state.email,
+          password: state.password,
+          nick: state.nick,
+          phoneNum: state.phoneNum,
+          deviceToken: ""
+        )
         await MainActor.run {
           state.isLoading = false
           // 회원가입 성공 처리 (예: 화면 닫기 또는 로그인 화면으로 이동)
           dismiss()
         }
-      } catch {
-        await MainActor.run {
-          state.isLoading = false
-          // 오류 처리 - 실제 구현에서는 오류 메시지 표시
-          print("회원가입 실패: \(error.localizedDescription)")
-        }
-      }
+      // TODO: - 실패 시 로직도 필요함
     }
   }
   
-  // 모든 필드 유효성 검사
-  private func validateAllFields() {
-    handleEmailChange(state.email)
-    handleNickChange(state.nick)
-    handlePhoneNumChange(state.phoneNum)
-    handlePasswordChange(state.password)
-    handleConfirmPasswordChange(state.confirmPassword)
-  }
 }
 
 // MARK: - 상태 구조체
@@ -340,6 +318,6 @@ struct EmailSignUpScreenState {
 #if DEBUG
 #Preview {
   EmailSignUpScreen()
-    .environmentObject(AuthModel(service: .shared))
+    .environmentObject(AuthModel(service: NetworkService(session: URLSession.shared), tokenManager: TokenManager()))
 }
 #endif
