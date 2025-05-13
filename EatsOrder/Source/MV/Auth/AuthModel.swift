@@ -21,9 +21,14 @@ final class AuthModel: ObservableObject {
     do {
       let response: MessageResponse = try await service.request(endpoint: UserEndpoint.validateEmail(email: email))
       emailValidationResult = response.message
-    } catch  {
+    } catch {
       print(error.localizedDescription)
+      emailValidationResult = error.localizedDescription
     }
     
   }
+}
+
+enum AuthModelError: Error {
+  case emailValidationFailed
 }
