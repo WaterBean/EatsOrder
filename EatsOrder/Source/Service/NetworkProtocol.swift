@@ -22,7 +22,7 @@ protocol NetworkProtocol {
 
 protocol Middleware {
   func prepare(request: inout URLRequest)
-  func process(response: HTTPURLResponse, data: Data) async throws -> (Bool, Error?) // (재시도 필요 여부, 에러)
+  func process(response: HTTPURLResponse, data: Data) async throws -> Result<Bool, Error>
 }
 
 protocol EndpointProtocol {
@@ -32,7 +32,6 @@ protocol EndpointProtocol {
   var parameters: [URLQueryItem]? { get }
   var headers: [String: String]? { get }
   var body: Encodable? { get }
-  var requiresAuthentication: Bool { get }
   
 }
 

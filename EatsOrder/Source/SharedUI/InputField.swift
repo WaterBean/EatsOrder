@@ -125,6 +125,7 @@ struct InputField: View {
 struct PasswordField: View {
   let title: String
   let placeholder: String
+  var isInspectable: Bool = true
   @Binding var text: String
   @Binding var validationState: InputField.ValidationState
   @Binding var showPassword: Bool
@@ -145,13 +146,15 @@ struct PasswordField: View {
           SecureField(placeholder, text: $text)
             .textInputAutocapitalization(.never)
         }
-        
-        Button {
-          showPassword.toggle()
-        } label: {
-          Image(systemName: showPassword ? "eye.slash" : "eye")
-            .foregroundColor(.gray)
+        if isInspectable {
+          Button {
+            showPassword.toggle()
+          } label: {
+            Image(systemName: showPassword ? "eye.slash" : "eye")
+              .foregroundColor(.gray)
+          }
         }
+        
       }
       .padding()
       .background(
@@ -180,4 +183,11 @@ struct PasswordField: View {
       }
     }
   }
+  
+  func inspectable(_ isInspectable: Bool) -> PasswordField {
+    var view = self
+    view.isInspectable = isInspectable
+    return view
+  }
+  
 }

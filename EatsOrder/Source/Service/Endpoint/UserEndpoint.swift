@@ -55,11 +55,13 @@ enum UserEndpoint: EndpointProtocol {
   }
   
   var headers: [String: String]? {
-    return [
-      "Content-Type": "application/json",
-      "Accept": "application/json",
-      "SeSACKey": Environments.apiKey
-    ]
+    switch self {
+    default:
+      return [
+        "Content-Type": "application/json",
+        "SeSACKey": Environments.apiKey
+      ]
+    }
   }
   
   var body: Encodable? {
@@ -98,15 +100,6 @@ enum UserEndpoint: EndpointProtocol {
       
     case .myProfile:
       return nil
-    }
-  }
-  
-  var requiresAuthentication: Bool {
-    switch self {
-    case .myProfile:
-      return true
-    default:
-      return false
     }
   }
   

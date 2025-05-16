@@ -7,7 +7,6 @@
 
 import Foundation
 
-// MARK: - 네트워크 서비스 구현
 final class NetworkService: NetworkProtocol {
   let session: URLSessionProtocol
   private var middleware: [Middleware] = []
@@ -78,15 +77,17 @@ final class NetworkService: NetworkProtocol {
       throw NetworkError.invalidResponse
     }
     
-    // HTTP 상태 코드가 성공 범위(200-299)가 아닌 경우 미들웨어 처리
-    if !(200...299).contains(httpResponse.statusCode) {
+    // HTTP 상태 코드가 성공 범위(200-304)가 아닌 경우 미들웨어 처리
+    if !(200...304).contains(httpResponse.statusCode) {
       // 모든 미들웨어의 process 메서드 호출
       for m in middleware {
-        let (retry, error) = try await m.process(response: httpResponse, data: data)
-        if retry {
-          throw NetworkError.authRetryNeeded
-        }
-        if let error = error {
+        let result = try await m.process(response: httpResponse, data: data)
+        switch result {
+        case .success(let retry):
+          if retry {
+            throw NetworkError.authRetryNeeded
+          }
+        case .failure(let error):
           throw error
         }
       }

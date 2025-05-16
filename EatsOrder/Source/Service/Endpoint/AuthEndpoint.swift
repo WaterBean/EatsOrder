@@ -9,7 +9,7 @@ import Foundation
 
 enum AuthEndpoint: EndpointProtocol {
   
-  case refreshToken
+  case refresh(refreshToken: String)
   
   var baseURL: URL? {
     return URL(string: Environments.baseURL)
@@ -17,40 +17,41 @@ enum AuthEndpoint: EndpointProtocol {
   
   var path: String {
     switch self {
-    case .refreshToken:
+    case .refresh:
       return "/auth/refresh"
     }
   }
   
   var method: NetworkMethod {
     switch self {
-    case .refreshToken:.get
-      
+    case .refresh:
+        .get
     }
   }
   
   var parameters: [URLQueryItem]? {
     switch self {
-    case .refreshToken: nil
+    case .refresh:
+      nil
     }
   }
   
   var headers: [String: String]? {
+    switch self {
+    case .refresh(let refreshToken):
     return [
       "Content-Type": "application/json",
-      "Accept": "application/json",
-      "SeSACKey": Environments.apiKey
+      "SeSACKey": Environments.apiKey,
+      "RefreshToken": refreshToken,
+      "Authorization": TokenManager().accessToken
     ]
+    }
   }
   
   var body: Encodable? {
     switch self {
-    case .refreshToken: nil
+    case .refresh: nil
     }
   }
   
-  
-  var requiresAuthentication: Bool {
-    false
-  }
 }

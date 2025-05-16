@@ -263,7 +263,7 @@ extension EmailSignUpScreen {
           // 회원가입 성공 처리 (예: 화면 닫기 또는 로그인 화면으로 이동)
           dismiss()
         }
-      // TODO: - 실패 시 로직도 필요함
+      // TODO: - 실패 시 예외처리 로직도 필요
     }
   }
   

@@ -188,10 +188,14 @@ struct EmailLoginContainer: View {
   @State private var email = ""
   @State private var password = ""
   @Environment(\.dismiss) private var dismiss
+  @EnvironmentObject private var authModel: AuthModel
   
   func login() {
     // 로그인 로직 처리
-    dismiss()
+    Task {
+      await authModel.login(email: email, password: password)
+      dismiss()
+    }
   }
   
   var body: some View {
@@ -250,6 +254,7 @@ struct EmailLoginView: View {
             validatePassword(newPassword)
           }
         )
+        .inspectable(false)
       }
       .padding(.horizontal)
       
@@ -289,8 +294,8 @@ struct EmailLoginView: View {
   
   // 비밀번호 유효성 검사 - 로그인에서는 입력 여부만 확인
   private func validatePassword(_ password: String) {
-    if password.count >= 8 {
-      passwordValidationState = .invalid(message: "비밀번호를 입력해주세요.")
+    if password.count < 8 {
+      passwordValidationState = .invalid(message: "비밀번호는 8자리 이상입니다.")
     } else {
       // 로그인에서는 단순히 입력 여부만 확인
       passwordValidationState = .initial
@@ -300,5 +305,6 @@ struct EmailLoginView: View {
 #if DEBUG
 #Preview {
   SignInScreen()
+    .environmentObject(AuthModel(service: NetworkService(session: URLSession.shared), tokenManager: TokenManager()))
 }
 #endif
