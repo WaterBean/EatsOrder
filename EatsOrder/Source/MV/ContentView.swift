@@ -16,7 +16,9 @@ struct ContentView: View {
   var body: some View {
     
     VStack {
+      Image(.bakery)
       Text(Environments.apiKey)
+        .font(.pretendardCaption3)
       Text(profile.nick)
       Button {
         Task {
