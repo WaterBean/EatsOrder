@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct SignInScreen: View {
+  @EnvironmentObject var authModel: AuthModel
   @State private var isShowingEmailLogin = false
   @State private var isShowingEmailSignup = false
   @State private var navigationPath = NavigationPath()
@@ -21,10 +22,16 @@ struct SignInScreen: View {
         onDismiss: { dismiss() }
       )
       .navigationDestination(isPresented: $isShowingEmailLogin) {
-        EmailLoginContainer()
+        EmailLoginScreen()
       }
       .navigationDestination(isPresented: $isShowingEmailSignup) {
         EmailSignUpScreen()
+      }
+      .onReceive(authModel.$loginSuccess) { success in
+        if success { dismiss() }
+      }
+      .onReceive(authModel.$joinSuccess) { success in
+        if success { isShowingEmailSignup = false }
       }
     }
   }
@@ -183,44 +190,77 @@ struct SignInButton: View {
   }
 }
 
-// MARK: - 이메일 로그인 컨테이너
-struct EmailLoginContainer: View {
+// **MARK: - 이메일 로그인 컨테이너**
+struct EmailLoginScreen: View {
   @State private var email = ""
   @State private var password = ""
   @Environment(\.dismiss) private var dismiss
   @EnvironmentObject private var authModel: AuthModel
   
-  func login() {
-    // 로그인 로직 처리
-    Task {
-      await authModel.login(email: email, password: password)
-      dismiss()
-    }
-  }
-  
   var body: some View {
     EmailLoginView(
       email: $email,
       password: $password,
+      isLoading: authModel.isLoading,
+      errorMessage: authModel.errorMessage,
       onLogin: login,
       onDismiss: { dismiss() }
     )
+    // 로그인 성공 시 화면 닫기
+    .onReceive(authModel.$loginSuccess) { success in
+      if success {
+        // 로그인 성공 후 약간의 지연을 두고 화면 닫기
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+          dismiss()
+          
+          // 상태 초기화 (다음 로그인 시도를 위해)
+          DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            authModel.dispatch(.setLoginSuccess(success: false))
+            authModel.dispatch(.clearError)
+          }
+        }
+      }
+    }
+  }
+  
+  private func login() {
+    // 키보드 숨기기
+    hideKeyboard()
+    
+    // 로그인 로직 처리
+    Task {
+      await authModel.login(email: email, password: password)
+      // dismiss는 onReceive에서 처리
+    }
+  }
+  
+  private func hideKeyboard() {
+    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
   }
 }
 
-// MARK: - 이메일 로그인 뷰
+// **MARK: - 이메일 로그인 뷰**
 struct EmailLoginView: View {
   @Binding var email: String
   @Binding var password: String
   @State private var emailValidationState: InputField.ValidationState = .initial
   @State private var passwordValidationState: InputField.ValidationState = .initial
+  var isLoading: Bool  // 로딩 상태 추가
+  var errorMessage: String  // 에러 메시지 추가
   var onLogin: () -> Void
   var onDismiss: () -> Void
+  
+  @FocusState private var focusedField: Field?
+  
+  // 포커스 필드 열거형
+  enum Field {
+    case email, password
+  }
   
   // 로그인 버튼 활성화 조건
   private var isLoginEnabled: Bool {
     // 기본 요구사항: 이메일과 비밀번호가 비어있지 않아야 함
-    !email.isEmpty && !password.isEmpty
+    !email.isEmpty && !password.isEmpty && !isLoading
   }
   
   var body: some View {
@@ -242,6 +282,11 @@ struct EmailLoginView: View {
           },
           keyboardType: .emailAddress
         )
+        .focused($focusedField, equals: .email)
+        .submitLabel(.next)
+        .onSubmit {
+          focusedField = .password
+        }
         
         // 비밀번호 입력 필드
         PasswordField(
@@ -249,29 +294,61 @@ struct EmailLoginView: View {
           placeholder: "비밀번호를 입력하세요",
           text: $password,
           validationState: $passwordValidationState,
-          showPassword: .constant(false),  // 로그인 화면에서는 보통 비밀번호 표시를 허용하지 않음
+          showPassword: .constant(false),
           onValueChanged: { newPassword in
             validatePassword(newPassword)
           }
         )
         .inspectable(false)
+        .focused($focusedField, equals: .password)
+        .submitLabel(.done)
+        .onSubmit {
+          if isLoginEnabled {
+            onLogin()
+          }
+        }
       }
       .padding(.horizontal)
       
+      // 에러 메시지 표시
+      if !errorMessage.isEmpty {
+        Text(errorMessage)
+          .foregroundColor(.red)
+          .font(.caption)
+          .transition(.opacity)
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .padding(.horizontal)
+      }
+      
       // 로그인 버튼
       Button(action: onLogin) {
-        Text("로그인")
-          .font(.headline)
-          .foregroundColor(.white)
-          .frame(maxWidth: .infinity)
-          .padding()
-          .background(isLoginEnabled ? Color.black : Color.gray)
-          .cornerRadius(12)
-          .padding(.horizontal)
+        HStack {
+          if isLoading {
+            ProgressView()
+              .progressViewStyle(CircularProgressViewStyle(tint: .white))
+              .padding(.trailing, 8)
+          }
+          
+          Text("로그인")
+            .font(.headline)
+            .foregroundColor(.white)
+        }
+        .frame(maxWidth: .infinity)
+        .padding()
+        .background(isLoginEnabled ? Color.black : Color.gray)
+        .cornerRadius(12)
+        .padding(.horizontal)
       }
       .disabled(!isLoginEnabled)
       
       Spacer()
+    }
+    .animation(.easeInOut, value: errorMessage)
+    .onChange(of: isLoading) { _ in
+      // 로딩이 끝났을 때 키보드 숨기기
+      if !isLoading {
+        focusedField = nil
+      }
     }
   }
   
@@ -302,9 +379,3 @@ struct EmailLoginView: View {
     }
   }
 }
-#if DEBUG
-#Preview {
-  SignInScreen()
-    .environmentObject(AuthModel(service: NetworkService(session: URLSession.shared), tokenManager: TokenManager()))
-}
-#endif

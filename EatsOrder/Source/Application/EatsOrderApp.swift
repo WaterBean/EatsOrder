@@ -30,7 +30,6 @@ struct MyApp: App {
   }
 }
 
-// @MainActor 제거하고 필요한 부분에만 적용
 final class DependencySetup {
   @MainActor func setupDependencies() -> (AuthModel, ProfileModel) {
     // 1. 기본 의존성 생성

@@ -54,7 +54,7 @@ struct ContentView: View {
 
 #if DEBUG
 #Preview {
-  ContentView()
+//  ContentView()
 //    .environmentObject(AppSetup().createAuthModel())
 }
 #endif

@@ -41,11 +41,11 @@ final class AuthMiddleware: Middleware {
       } else {
         // 토큰 갱신 실패 - 토큰 만료 처리
         tokenExpiredHandler()
-        return .failure(NetworkError.authenticationFailed)
+        return .failure(NetworkError.authenticationFailed(message: "토큰 갱신 실패. 다시 로그인해주세요."))
       }
     } else if response.statusCode == 418 {
       tokenExpiredHandler()
-      return .failure(NetworkError.authenticationFailed)
+      return .failure(NetworkError.authenticationFailed(message: "세션이 만료되었습니다. 다시 로그인해주세요."))
     }
     
     return .success(false) // 재시도 불필요

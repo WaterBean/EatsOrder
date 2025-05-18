@@ -78,7 +78,14 @@ final class NetworkService: NetworkProtocol {
     }
     
     // HTTP 상태 코드가 성공 범위(200-304)가 아닌 경우 미들웨어 처리
-    if !(200...304).contains(httpResponse.statusCode) {
+    guard (200...304).contains(httpResponse.statusCode) else {
+      var message: String
+      do {
+        let errorResponse = try JSONDecoder().decode(MessageResponse.self, from: data)
+        message = errorResponse.message
+      } catch {
+        message = "에러 디코딩 실패"
+      }
       // 모든 미들웨어의 process 메서드 호출
       for m in middleware {
         let result = try await m.process(response: httpResponse, data: data)
@@ -93,7 +100,7 @@ final class NetworkService: NetworkProtocol {
       }
       
       // 미들웨어에서 처리되지 않은 에러
-      throw NetworkError.serverError(statusCode: httpResponse.statusCode)
+      throw NetworkError.serverError(statusCode: httpResponse.statusCode, message: message)
     }
     
     do {
@@ -143,8 +150,15 @@ extension NetworkService {
       throw NetworkError.invalidResponse
     }
     
-    guard (200...299).contains(httpResponse.statusCode) else {
-      throw NetworkError.serverError(statusCode: httpResponse.statusCode)
+    guard (200...304).contains(httpResponse.statusCode) else {
+      var message: String
+      do {
+        let errorResponse = try JSONDecoder().decode(MessageResponse.self, from: data)
+        message = errorResponse.message
+      } catch {
+        message = "에러 디코딩 실패"
+      }
+      throw NetworkError.serverError(statusCode: httpResponse.statusCode, message: message)
     }
     
     do {
