@@ -6,6 +6,8 @@
 //
 
 import UIKit
+import KakaoSDKAuth
+import KakaoSDKUser
 
 // 인증 관련 모든 액션을 정의하는 열거형
 enum AuthAction {

@@ -6,6 +6,9 @@
 //
 
 import SwiftUI
+import KakaoSDKUser
+import KakaoSDKAuth
+import AuthenticationServices
 
 struct SignInScreen: View {
   @EnvironmentObject var authModel: AuthModel
@@ -19,6 +22,8 @@ struct SignInScreen: View {
       SignInView(
         isShowingEmailLogin: $isShowingEmailLogin,
         isShowingEmailSignup: $isShowingEmailSignup,
+        onKakaoLogin: performKakaoLogin,
+        onAppleSignIn: handleAppleSignIn,
         onDismiss: { dismiss() }
       )
       .navigationDestination(isPresented: $isShowingEmailLogin) {
@@ -35,11 +40,92 @@ struct SignInScreen: View {
       }
     }
   }
+  
+  private func performKakaoLogin() {
+    // 로직 시작 전 상태 초기화
+    authModel.dispatch(.clearError)
+    authModel.dispatch(.setLoading(isLoading: true))
+    
+    if (UserApi.isKakaoTalkLoginAvailable()) {
+      // 카카오톡 앱으로 로그인
+      UserApi.shared.loginWithKakaoTalk { (oauthToken, error) in
+        handleKakaoLoginResult(oauthToken: oauthToken, error: error)
+      }
+    } else {
+      // TODO: - 카카오톡 앱이 없는 경우 카카오톡 설치로 유도
+    }
+  }
+  
+  // 카카오 로그인 결과 처리
+  private func handleKakaoLoginResult(oauthToken: OAuthToken?, error: Error?) {
+    // 에러 처리
+    if let error = error {
+      authModel.dispatch(.setLoading(isLoading: false))
+      authModel.dispatch(.setError(message: "카카오 로그인 실패: \(error.localizedDescription)"))
+      return
+    }
+    
+    // 토큰 유효성 검사
+    guard let token = oauthToken?.accessToken else {
+      authModel.dispatch(.setLoading(isLoading: false))
+      authModel.dispatch(.setError(message: "카카오 토큰을 가져오지 못했습니다"))
+      return
+    }
+    
+    // 서버에 카카오 토큰 전달
+    Task {
+      await authModel.kakaoLogin(oauthToken: token)
+    }
+  }
+  
+  private func handleAppleSignIn(result: Result<ASAuthorization, Error>) {
+    switch result {
+    case .success(let authorization):
+      // Apple ID 인증 정보 확인
+      if let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential,
+         let tokenData = appleIDCredential.identityToken,
+         let idToken = String(data: tokenData, encoding: .utf8) {
+        
+        // 닉네임 추출 (첫 로그인 시에만 제공됨)
+        var nickname: String? = nil
+        if let fullName = appleIDCredential.fullName,
+           let givenName = fullName.givenName {
+          nickname = givenName
+        }
+        
+        // 서버에 애플 토큰 전달
+        Task {
+          await authModel.appleLogin(idToken: idToken, nick: nickname)
+        }
+      } else {
+        // 토큰 획득 실패
+        authModel.dispatch(.setError(message: "애플 토큰을 가져오지 못했습니다"))
+      }
+      
+    case .failure(let error):
+      // 실패 처리
+      authModel.dispatch(.setError(message: "애플 로그인 실패: \(error.localizedDescription)"))
+    }
+  }
 }
+
+extension SignInWithAppleButton {
+    /// 애플 로그인 버튼을 앱의 디자인 스타일에 맞게 통일하는 모디파이어
+    func customAppleButtonStyle(height: CGFloat = 50) -> some View {
+        self
+            .frame(height: height)
+            .padding(.horizontal, 20)
+            .clipShape(.capsule)
+            
+    }
+}
+
 
 struct SignInView: View {
   @Binding var isShowingEmailLogin: Bool
   @Binding var isShowingEmailSignup: Bool
+  var onKakaoLogin: () -> Void
+  var onAppleSignIn: (Result<ASAuthorization, Error>) -> Void
   var onDismiss: () -> Void
   
   var body: some View {
@@ -95,7 +181,7 @@ struct SignInView: View {
             backgroundColor: .yellow,
             foregroundColor: .black,
             action: {
-              // 카카오 로그인 액션
+              onKakaoLogin()
             }
           )
           
@@ -108,15 +194,13 @@ struct SignInView: View {
             .cornerRadius(20)
           
           // Apple 로그인 버튼
-          SignInButton(
-            text: "Apple로 로그인",
-            icon: "apple.logo",
-            backgroundColor: .white,
-            foregroundColor: .black,
-            action: {
-              // Apple 로그인 액션
-            }
-          )
+          SignInWithAppleButton { request in
+            request.requestedScopes = [.fullName, .email]
+          } onCompletion: { result in
+            onAppleSignIn(result)
+          }
+          .customAppleButtonStyle()
+          .signInWithAppleButtonStyle(.white)
           
           // 이메일 로그인 버튼
           SignInButton(

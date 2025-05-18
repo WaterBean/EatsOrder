@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import KakaoSDKCommon
+import KakaoSDKAuth
 
 @main
 struct MyApp: App {
@@ -13,6 +15,8 @@ struct MyApp: App {
   @StateObject private var profileModel: ProfileModel
   
   init() {
+    
+    KakaoSDK.initSDK(appKey: Environments.kakaoNativeAppKey)
     // AppSetup 대신 직접 초기화
     let setup = DependencySetup()
     let (authModel, profileModel) = setup.setupDependencies()
@@ -24,6 +28,11 @@ struct MyApp: App {
   var body: some Scene {
     WindowGroup {
       ContentView()
+        .onOpenURL(perform: { url in
+          if (AuthApi.isKakaoTalkLoginUrl(url)) {
+            _ = AuthController.handleOpenUrl(url: url)
+          }
+        })
         .environmentObject(authModel)
         .environmentObject(profileModel)
     }
