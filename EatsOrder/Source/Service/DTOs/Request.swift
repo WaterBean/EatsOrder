@@ -35,3 +35,7 @@ struct AppleLoginRequest: Encodable {
   let deviceToken: String
   let nick: String?
 }
+
+struct StoreLikeRequest: Encodable {
+  let like_status: Bool
+}

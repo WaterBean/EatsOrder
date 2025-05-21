@@ -1,0 +1,131 @@
+//
+//  StoreEndpoint.swift
+//  EatsOrder
+//
+//  Created by 한수빈 on 5/21/25.
+//
+
+import Foundation
+
+enum StoreEndpoint: EndpointProtocol {
+  
+  case storeList(category: String?, longitude: Float?, latitude: Float?, next: String?, limit: Int?, orderBy: String?)
+  case storeDetail(storeId: String)
+  case storeLike(storeId: String, likeStatus: Bool)
+  case searchStores(name: String)
+  case popularStores(category: String?)
+  case popularSearches
+  case myLikedStores(category: String?, next: String?, limit: String?)
+    
+  var baseURL: URL? {
+    return URL(string: Environments.baseURL)
+  }
+  
+  var path: String {
+    switch self {
+    case .storeList:
+      return "/v1/stores"
+    case .storeDetail(let storeId):
+      return "/v1/stores/\(storeId)"
+    case .storeLike(let storeId, _):
+      return "/v1/stores/\(storeId)/like"
+    case .searchStores:
+      return "/v1/stores/search"
+    case .popularStores:
+      return "/v1/stores/popular-stores"
+    case .popularSearches:
+      return "/v1/stores/searches-popular"
+    case .myLikedStores:
+      return "/v1/stores/likes/me"
+    }
+  }
+  
+  var method: NetworkMethod {
+    switch self {
+    case .storeList, .storeDetail, .searchStores, .popularStores, .popularSearches, .myLikedStores:
+      return .get
+    case .storeLike:
+      return .post
+    }
+  }
+  
+  var parameters: [URLQueryItem]? {
+    switch self {
+    case .storeList(let category, let longitude, let latitude, let next, let limit, let orderBy):
+      var queryItems: [URLQueryItem] = []
+      
+      if let category = category {
+        queryItems.append(URLQueryItem(name: "category", value: category))
+      }
+      
+      if let longitude = longitude {
+        queryItems.append(URLQueryItem(name: "longitude", value: String(longitude)))
+      }
+      
+      if let latitude = latitude {
+        queryItems.append(URLQueryItem(name: "latitude", value: String(latitude)))
+      }
+      
+      if let next = next {
+        queryItems.append(URLQueryItem(name: "next", value: next))
+      }
+      
+      if let limit = limit {
+        queryItems.append(URLQueryItem(name: "limit", value: String(limit)))
+      }
+      
+      if let orderBy = orderBy {
+        queryItems.append(URLQueryItem(name: "order_by", value: orderBy))
+      }
+      
+      return queryItems.isEmpty ? nil : queryItems
+      
+    case .searchStores(let name):
+      return [URLQueryItem(name: "name", value: name)]
+      
+    case .popularStores(let category):
+      guard let category = category else { return nil }
+      return [URLQueryItem(name: "category", value: category)]
+      
+    case .myLikedStores(let category, let next, let limit):
+      var queryItems: [URLQueryItem] = []
+      
+      if let category = category {
+        queryItems.append(URLQueryItem(name: "category", value: category))
+      }
+      
+      if let next = next {
+        queryItems.append(URLQueryItem(name: "next", value: next))
+      }
+      
+      if let limit = limit {
+        queryItems.append(URLQueryItem(name: "limit", value: limit))
+      }
+      
+      return queryItems.isEmpty ? nil : queryItems
+      
+    case .storeDetail, .storeLike, .popularSearches:
+      return nil
+    }
+  }
+  
+  var headers: [String: String]? {
+    switch self {
+    default:
+      return [
+        "Content-Type": "application/json",
+        "SeSACKey": Environments.apiKey
+      ]
+    }
+  }
+  
+  var body: Encodable? {
+    switch self {
+    case .storeLike(_, let likeStatus):
+      return StoreLikeRequest(like_status: likeStatus)
+      
+    case .storeList, .storeDetail, .searchStores, .popularStores, .popularSearches, .myLikedStores:
+      return nil
+    }
+  }
+}
