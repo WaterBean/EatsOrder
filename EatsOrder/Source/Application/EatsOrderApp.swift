@@ -8,21 +8,27 @@
 import SwiftUI
 import KakaoSDKCommon
 import KakaoSDKAuth
+import Combine
+
 
 @main
-struct MyApp: App {
+struct EatsOrderApp: App {
   @StateObject private var authModel: AuthModel
   @StateObject private var profileModel: ProfileModel
-  
+  @StateObject private var storeModel: StoreModel
+  @StateObject private var locationManager = LocationManager.shared
   init() {
-    
+    // KakaoSDK 초기화
     KakaoSDK.initSDK(appKey: Environments.kakaoNativeAppKey)
-    // AppSetup 대신 직접 초기화
-    let setup = DependencySetup()
-    let (authModel, profileModel) = setup.setupDependencies()
     
+    // 의존성 설정
+    let setup = DependencySetup()
+    let (authModel, profileModel, storeModel) = setup.setupDependencies()
+    
+    // StateObject 초기화
     self._authModel = StateObject(wrappedValue: authModel)
     self._profileModel = StateObject(wrappedValue: profileModel)
+    self._storeModel = StateObject(wrappedValue: storeModel)
   }
   
   var body: some Scene {
@@ -35,19 +41,24 @@ struct MyApp: App {
         })
         .environmentObject(authModel)
         .environmentObject(profileModel)
+        .environmentObject(storeModel)
+        .environmentObject(locationManager)
     }
   }
 }
 
+// MARK: - 의존성 설정
 final class DependencySetup {
-  @MainActor func setupDependencies() -> (AuthModel, ProfileModel) {
+  @MainActor func setupDependencies() -> (AuthModel, ProfileModel, StoreModel) {
     // 1. 기본 의존성 생성
     let tokenManager = TokenManager()
     let networkService = NetworkService(session: URLSession.shared)
+    let locationManager = LocationManager.shared
     
     // 2. 모델 생성
     let authModel = AuthModel(service: networkService, tokenManager: tokenManager)
     let profileModel = ProfileModel(service: networkService)
+    let storeModel = StoreModel(networkService: networkService, locationManager: locationManager)
     
     // 3. 미들웨어 생성 및 설정 (안전한 weak 참조 사용)
     let authMiddleware = AuthMiddleware(
@@ -66,6 +77,6 @@ final class DependencySetup {
     // 4. 네트워크 서비스에 미들웨어 추가
     networkService.addMiddleware(authMiddleware)
     
-    return (authModel, profileModel)
+    return (authModel, profileModel, storeModel)
   }
 }

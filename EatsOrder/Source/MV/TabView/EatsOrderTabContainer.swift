@@ -7,28 +7,44 @@
 
 import SwiftUI
 
+private struct IsTabBarHiddenKey: EnvironmentKey {
+  static let defaultValue: Binding<Bool> = .constant(false)
+}
+extension EnvironmentValues {
+  var isTabBarHidden: Binding<Bool> {
+    get { self[IsTabBarHiddenKey.self] }
+    set { self[IsTabBarHiddenKey.self] = newValue }
+  }
+}
+
 struct EatsOrderTabContainer: View {
   @EnvironmentObject var authModel: AuthModel
-  @State var isShowSignInScreen = false
+  @EnvironmentObject var profileModel: ProfileModel
+  @EnvironmentObject var storeModel: StoreModel
+  @State private var isShowSignInScreen = false
   @State private var selectedTabIndex = 0
-  
+  @State private var isTabBarHidden = false
+  @StateObject private var router = Router()
+
   var body: some View {
-    
     ZStack(alignment: .bottom) {
       TabView(selection: $selectedTabIndex) {
         ForEach(EatsOrderTab.allCases, id: \.self) { tab in
-          tab.view
+          tab.screen
             .tag(tab.rawValue)
         }
         .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
         .toolbar(.hidden, for: .tabBar)
         .edgesIgnoringSafeArea(.all)
       }
-      // 커스텀 탭바
-      EatsOrderTabView(selectedTabIndex: $selectedTabIndex)
-      // 플로팅 버튼
-      TabBarFloatingButton()
-        .offset(y: -45)
+      Group {
+        EatsOrderTabView(selectedTabIndex: $selectedTabIndex)
+        TabBarFloatingButton()
+          .offset(y: -45)
+      }
+      .offset(y: isTabBarHidden ? 120 : 0)
+      .opacity(isTabBarHidden ? 0 : 1)
+      .animation(.easeOut(duration: 0.35), value: isTabBarHidden)
     }
     .fullScreenCover(isPresented: $isShowSignInScreen) {
       SignInScreen()
@@ -42,29 +58,32 @@ struct EatsOrderTabContainer: View {
     }
     .onReceive(authModel.$sessionState) { state in
       switch state {
-      case .expired :
+      case .expired, .initial:
         isShowSignInScreen = true
       default:
         isShowSignInScreen = false
       }
     }
+    // 환경에 router 주입
+    .environmentObject(router)
+    .environment(\.isTabBarHidden, $isTabBarHidden)
   }
 }
 
 struct EatsOrderTabView: View {
   @Binding var selectedTabIndex: Int
-  
+
   var body: some View {
     VStack(spacing: 0) {
       Spacer()
-      
+
       ZStack {
         // 배경 이미지
         Image("tabbar-background")
           .resizable()
           .aspectRatio(4.875, contentMode: .fit)
           .shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: -2)
-        
+
         // 탭 버튼들
         HStack {
           ForEach(0..<2) { index in
@@ -77,11 +96,11 @@ struct EatsOrderTabView: View {
             }
             Spacer()
           }
-          
+
           // 가운데 공간
           Spacer()
           Spacer()
-          
+
           ForEach(2..<4) { index in
             Spacer()
             TabButton(
@@ -97,7 +116,7 @@ struct EatsOrderTabView: View {
       }
       .frame(maxWidth: .infinity)
       .edgesIgnoringSafeArea([.horizontal, .bottom])
-      
+
       // 홈 인디케이터 공간
       Color(UIColor.systemBackground)
         .frame(height: 20)
@@ -113,7 +132,7 @@ struct TabButton: View {
   let icon: String
   let isSelected: Bool
   let action: () -> Void
-  
+
   var body: some View {
     Button(action: action) {
       Image(icon)
@@ -122,4 +141,19 @@ struct TabButton: View {
   }
 }
 
+struct TabBarHiddenModifier: ViewModifier {
+  let hidden: Bool
+  @Environment(\.isTabBarHidden) private var isTabBarHidden
 
+  func body(content: Content) -> some View {
+    content
+      .onAppear { isTabBarHidden.wrappedValue = hidden }
+      .onDisappear { isTabBarHidden.wrappedValue = !hidden }
+  }
+}
+
+extension View {
+  func tabBarHidden(_ hidden: Bool = true) -> some View {
+    self.modifier(TabBarHiddenModifier(hidden: hidden))
+  }
+}

@@ -24,19 +24,19 @@ enum StoreEndpoint: EndpointProtocol {
   var path: String {
     switch self {
     case .storeList:
-      return "/v1/stores"
+      return "/stores"
     case .storeDetail(let storeId):
-      return "/v1/stores/\(storeId)"
+      return "/stores/\(storeId)"
     case .storeLike(let storeId, _):
-      return "/v1/stores/\(storeId)/like"
+      return "/stores/\(storeId)/like"
     case .searchStores:
-      return "/v1/stores/search"
+      return "/stores/search"
     case .popularStores:
-      return "/v1/stores/popular-stores"
+      return "/stores/popular-stores"
     case .popularSearches:
-      return "/v1/stores/searches-popular"
+      return "/stores/searches-popular"
     case .myLikedStores:
-      return "/v1/stores/likes/me"
+      return "/stores/likes/me"
     }
   }
   
