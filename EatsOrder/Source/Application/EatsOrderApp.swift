@@ -73,10 +73,12 @@ final class DependencySetup {
         }
       }
     )
-    
+    let loggingMiddleware = LoggingMiddleware()
+
     // 4. 네트워크 서비스에 미들웨어 추가
     networkService.addMiddleware(authMiddleware)
-    
+    networkService.addMiddleware(loggingMiddleware)
+
     return (authModel, profileModel, storeModel)
   }
 }

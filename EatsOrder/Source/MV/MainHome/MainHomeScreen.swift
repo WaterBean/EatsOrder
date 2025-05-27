@@ -15,6 +15,9 @@ struct MainHomeScreen: View {
   @Environment(\.navigate) private var navigate
   @Environment(\.isTabBarHidden) private var isTabBarHidden
   @State private var selectedCategory: String? = nil
+  @State private var myPickSort: MyPickSort = .latest
+  @State private var filterPickchelin: Bool = false
+  @State private var filterMyPick: Bool = false
 
   enum Category: String, CaseIterable {
     case coffee = "커피"
@@ -62,7 +65,11 @@ struct MainHomeScreen: View {
       },
       onLocationSelected: {
         navigate(.push(HomeRoute.locationSelect))
-      }
+      },
+      myPickSort: $myPickSort,
+      filterPickchelin: $filterPickchelin,
+      filterMyPick: $filterMyPick,
+      filteredAndSortedStores: filteredAndSortedStores
     )
     .background(.brightSprout)
     .toolbar(.hidden, for: .navigationBar)
@@ -88,6 +95,33 @@ struct MainHomeScreen: View {
       }
     }
   }
+
+  // 필터/정렬 적용 함수
+  var filteredAndSortedStores: [StoreInfo] {
+    var result = storeModel.storeList
+    // 필터
+    if filterPickchelin && filterMyPick {
+      result = result.filter { $0.is_picchelin && $0.is_pick }
+    } else if filterPickchelin {
+      result = result.filter { $0.is_picchelin }
+    } else if filterMyPick {
+      result = result.filter { $0.is_pick }
+    }
+    // 둘 다 해제면 전체
+    // 정렬
+    switch myPickSort {
+    case .latest:
+      return result.sorted {
+        ($0.createdAt.toDate() ?? Date.distantPast) > ($1.createdAt.toDate() ?? Date.distantPast)
+      }
+    case .distance:
+      return result.sorted {
+        ($0.distance ?? .greatestFiniteMagnitude) < ($1.distance ?? .greatestFiniteMagnitude)
+      }
+    case .rating:
+      return result.sorted { $0.total_rating > $1.total_rating }
+    }
+  }
 }
 
 struct MainHomeView: View {
@@ -100,13 +134,16 @@ struct MainHomeView: View {
   let isLoading: Bool
   let errorMessage: String?
   let searchText: String
-
-  // 콜백 함수
   let onSearchTextChanged: (String) -> Void
   let onCategorySelected: (String?) -> Void
   let onLikeToggled: (String) -> Void
   let onLoadMore: () -> Void
   let onLocationSelected: () -> Void
+  // 상태를 Binding으로 전달
+  @Binding var myPickSort: MyPickSort
+  @Binding var filterPickchelin: Bool
+  @Binding var filterMyPick: Bool
+  let filteredAndSortedStores: [StoreInfo]
 
   // 내부 상태
   @State private var selectedCategory: String? = nil
@@ -116,18 +153,19 @@ struct MainHomeView: View {
     ZStack {
       // 메인 콘텐츠
       ScrollView {
-        VStack(spacing: 16) {
+        VStack(spacing: 0) {
           LocationView(
             location: location,
             onLocationSelected: onLocationSelected
           )
-          SearchView(
+          SearchBarView(
             searchText: searchText,
             onSearchTextChanged: onSearchTextChanged
           )
+          popularSearchTermsView()
           VStack(spacing: 0) {
             // 카테고리 선택 영역
-            CategorySelectView(
+            categorySelectView(
               categories: categories,
               selectedCategory: $selectedCategory,
               onCategorySelected: { category in
@@ -145,56 +183,68 @@ struct MainHomeView: View {
             SectionHeaderView(title: "실시간 인기 맛집")
 
             // 인기 맛집 목록 (가로 스크롤)
-            if !popularStores.isEmpty {
-              StoreListView(
-                stores: popularStores,
-                onLikeToggled: onLikeToggled
-              )
-            } else if !storeList.isEmpty {  // 인기 가게가 없을 경우 일반 가게 표시
-              StoreListView(
-                stores: Array(storeList.prefix(2)),
-                onLikeToggled: onLikeToggled
-              )
-            }
+            PopularStoresListView(
+              stores: popularStores,
+              onLikeToggled: onLikeToggled
+            )
 
             // 배너 영역
-            if !banners.isEmpty {
-              BannerView(banner: banners.first!)
-                .padding(.horizontal)
-            }
+            // BannerView(banner: banners.first ?? BannerInfo(id: "", imageUrl: "", title: "", badgeText: ""))
+            //     .padding(.horizontal)
 
             // 내 픽 가게 섹션
             SectionHeaderView(
               title: "내가 픽한 가게",
-              trailing: Button(action: {}) {
-                HStack {
-                  Text("더보기")
-                  Image(systemName: "chevron.right")
-                }
-                .font(.caption)
-                .foregroundColor(.gray)
-              })
-
-            // 내가 픽한 가게 목록
-            MyPickStoreView(selectedFilter: .constant(.pick), onFilterChanged: { _ in })
-
-            // 추가 가게 목록 (세로 리스트)
-            LazyVStack(spacing: 8) {
-              ForEach(storeList.indices, id: \.self) { index in
-                StoreCardView(
-                  store: storeList[index],
-                  onLikeToggled: { onLikeToggled(storeList[index].store_id) }
-                )
-
-                // 마지막 아이템이면 더 로드
-                if index == storeList.count - 1 {
-                  Color.clear
-                    .frame(height: 1)
-                    .onAppear {
-                      onLoadMore()
+              trailing:
+                HStack(spacing: 8) {
+                  ForEach(MyPickSort.allCases, id: \.self) { sort in
+                    Button(action: { myPickSort = sort }) {
+                      Text(sort.title)
+                        .font(.caption)
+                        .foregroundColor(myPickSort == sort ? .deepSprout : .gray)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(
+                          myPickSort == sort ? Color.brightSprout.opacity(0.2) : Color.clear
+                        )
+                        .cornerRadius(12)
                     }
+                  }
+                }
+            )
+
+            // 필터 토글 버튼 그룹 (체크박스)
+            HStack(spacing: 12) {
+              Toggle(isOn: $filterPickchelin) {
+                HStack(spacing: 4) {
+                  Image(systemName: filterPickchelin ? "checkmark.square.fill" : "square")
+                    .foregroundColor(filterPickchelin ? .deepSprout : .g60)
+                  Text("픽슐랭")
+                    .font(.Pretendard.body3.weight(.medium))
+                    .foregroundColor(filterPickchelin ? .deepSprout : .g60)
                 }
               }
+              .toggleStyle(.button)
+              .buttonStyle(.plain)
+
+              Toggle(isOn: $filterMyPick) {
+                HStack(spacing: 4) {
+                  Image(systemName: filterMyPick ? "checkmark.square.fill" : "square")
+                    .foregroundColor(filterMyPick ? .deepSprout : .g60)
+                  Text("My Pick")
+                    .font(.Pretendard.body3.weight(.medium))
+                    .foregroundColor(filterMyPick ? .deepSprout : .g60)
+                }
+              }
+              .toggleStyle(.button)
+              .buttonStyle(.plain)
+              Spacer()
+            }
+            .padding(.horizontal)
+
+            // 리스트 렌더링 (필터/정렬 적용)
+            ForEach(filteredAndSortedStores, id: \.store_id) { store in
+              StoreListCellView(store: store, onLikeToggled: { onLikeToggled(store.store_id) })
             }
           }
           .background(.g0)
@@ -213,20 +263,71 @@ struct MainHomeView: View {
           .background(Color.black.opacity(0.2))
       }
 
-      //      // 에러 메시지
-      //      if let error = errorMessage, !error.isEmpty {
-      //        VStack {
-      //          Spacer()
-      //          Text(error)
-      //            .foregroundColor(.white)
-      //            .padding()
-      //            .background(Color.red.opacity(0.8))
-      //            .cornerRadius(8)
-      //            .padding()
-      //        }
-      //      }
     }
   }
+
+  private func popularSearchTermsView() -> some View {
+
+    HStack(spacing: 8) {
+      Image("ai")
+        .resizable()
+        .frame(width: 16, height: 16)
+        .foregroundStyle(.deepSprout)
+
+      Text("인기검색어")
+        .font(.Pretendard.caption1)
+        .foregroundStyle(.deepSprout)
+
+      Text("1 스타벅스")
+        .font(.Pretendard.caption1)
+        .foregroundStyle(.blackSprout)
+      Spacer()
+    }
+    .padding(.horizontal, 20)
+    .padding(.bottom, 12)
+
+  }
+
+  private func categorySelectView(
+    categories: [(name: String, icon: String)],
+    selectedCategory: Binding<String?>,
+    onCategorySelected: @escaping (String) -> Void
+  ) -> some View {
+    HStack(spacing: 0) {
+      ForEach(categories, id: \.name) { category in
+        let isSelected = selectedCategory.wrappedValue == category.name
+        Button(action: {
+          onCategorySelected(category.name)
+        }) {
+          VStack(spacing: 8) {
+            ZStack {
+              RoundedRectangle(cornerRadius: 12)
+                .fill(Color.white)
+                .frame(width: 60, height: 60)
+              Image(category.icon)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 32, height: 32)
+            }
+            .overlay(
+              RoundedRectangle(cornerRadius: 12)
+                .stroke(isSelected ? .blackSprout : .g30, lineWidth: isSelected ? 1.5 : 1)
+            )
+            Text(category.name)
+              .font(
+                isSelected ? .Pretendard.body3.weight(.bold) : .Pretendard.body3.weight(.medium)
+              )
+              .foregroundColor(isSelected ? Color.blackSprout : .g60)
+          }
+          .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.plain)
+      }
+    }
+    .frame(maxWidth: .infinity)
+    .padding(20)
+  }
+
 }
 
 // MARK: - 하위 컴포넌트
@@ -238,169 +339,23 @@ struct LocationView: View {
   var body: some View {
     HStack {
       Button(action: onLocationSelected) {
-        HStack(spacing: 4) {
+        HStack(spacing: 8) {
           Image("location")
-            .foregroundStyle(.g90)
+            .resizable()
+            .frame(width: 24, height: 24)
 
           Text(location)
-            .foregroundStyle(.g90)
-            .font(.pretendardBody1)
+            .font(.Pretendard.body1.weight(.bold))
 
           Image("detail")
-            .foregroundColor(.gray)
-            .font(.caption)
         }
+        .foregroundColor(.g90)
       }
 
       Spacer()
-    }
-    .padding(.horizontal)
-  }
-}
-
-struct SearchView: View {
-  let searchText: String
-  let onSearchTextChanged: (String) -> Void
-
-  @State private var text: String = ""
-
-  var body: some View {
-    VStack(spacing: 10) {
-      // 검색창
-      HStack(spacing: 8) {
-        Image("search")
-          .foregroundColor(.gray)
-
-        TextField("검색어를 입력해주세요.", text: $text)
-          .font(.subheadline)
-          .foregroundColor(.black)
-          .onChange(of: text) { newValue in
-            onSearchTextChanged(newValue)
-          }
-      }
-      .padding(.horizontal, 16)
-      .padding(.vertical, 12)
-      .background(
-        RoundedRectangle(cornerRadius: 25)
-          .fill(Color.white)
-          .shadow(color: Color.black.opacity(0.08), radius: 4, x: 0, y: 2)
-      )
-      .padding(.horizontal)
-
-      // 서브텍스트 (인기검색어 등)
-      HStack(spacing: 8) {
-        Image("ai")
-          .resizable()
-          .frame(width: 16, height: 16)
-          .foregroundStyle(.deepSprout)
-
-        Text("인기검색어")
-          .font(.pretendardCaption1)
-          .foregroundStyle(.deepSprout)
-
-        Text("1 스타벅스")
-          .font(.pretendardCaption1)
-          .foregroundStyle(.blackSprout)
-        Spacer()
-      }
-      .padding(.horizontal)
-    }
-    .padding(.top, 8)
-    .onAppear { text = searchText }
-  }
-}
-
-struct CategorySelectView: View {
-  let categories: [(name: String, icon: String)]
-  @Binding var selectedCategory: String?
-  let onCategorySelected: (String) -> Void
-
-  var body: some View {
-    HStack(spacing: 0) {
-      ForEach(categories, id: \.name) { category in
-        let isSelected = selectedCategory == category.name
-        let isDisabled = category.name == "더보기"
-        Button(action: {
-          if !isDisabled { onCategorySelected(category.name) }
-        }) {
-          VStack(spacing: 8) {
-            ZStack {
-              RoundedRectangle(cornerRadius: 12)
-                .fill(isSelected ? Color.deepSprout : Color.white)
-                .frame(width: 60, height: 60)
-              Image(category.icon)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 32, height: 32)
-                .opacity(isDisabled ? 0.3 : 1.0)
-            }
-            .overlay(
-              RoundedRectangle(cornerRadius: 12)
-                .stroke(isSelected ? Color.deepSprout : Color.gray.opacity(0.3), lineWidth: 2)
-            )
-            Text(category.name)
-              .font(.caption)
-              .foregroundColor(isDisabled ? .gray : (isSelected ? Color.deepSprout : .gray))
-          }
-          .frame(maxWidth: .infinity)
-        }
-        .buttonStyle(.plain)
-        .disabled(isDisabled)
-      }
     }
     .frame(maxWidth: .infinity)
-    .padding(.horizontal)
-    .padding(.vertical, 8)
-  }
-}
-
-struct SectionHeaderView: View {
-  let title: String
-  var trailing: AnyView? = nil
-
-  init(title: String) {
-    self.title = title
-    self.trailing = nil
-  }
-
-  init<T: View>(title: String, trailing: T) {
-    self.title = title
-    self.trailing = AnyView(trailing)
-  }
-
-  var body: some View {
-    HStack {
-      Text(title)
-        .font(.pretendardTitle1)
-
-      Spacer()
-
-      if let trailing = trailing {
-        trailing
-      }
-    }
-    .padding(.horizontal)
-    .padding(.top, 4)
-  }
-}
-
-struct StoreListView: View {
-  let stores: [StoreInfo]
-  let onLikeToggled: (String) -> Void
-
-  var body: some View {
-    ScrollView(.horizontal, showsIndicators: false) {
-      HStack(spacing: 12) {
-        ForEach(stores, id: \.store_id) { store in
-          StoreCardHorizontalView(
-            store: store,
-            onLikeToggled: { onLikeToggled(store.store_id) }
-          )
-          .frame(width: 180, height: 240)
-        }
-      }
-      .padding(.horizontal)
-    }
+    .padding(.horizontal, 20)
   }
 }
 
@@ -434,7 +389,7 @@ struct BannerView: View {
               .resizable()
               .frame(width: 60, height: 60)
           }
-          .padding()
+
         )
       // 뱃지/진행도
       HStack(spacing: 8) {
@@ -455,285 +410,291 @@ struct BannerView: View {
   }
 }
 
-struct MyPickStoreView: View {
-  @Binding var selectedFilter: MyPickFilter
-  let onFilterChanged: (MyPickFilter) -> Void
-
-  var body: some View {
-    HStack(spacing: 12) {
-      ForEach(MyPickFilter.allCases, id: \.self) { filter in
-        Button(action: { onFilterChanged(filter) }) {
-          HStack(spacing: 4) {
-            if filter == .pick {
-              Image(systemName: "checkmark.square.fill")
-                .foregroundColor(.green)
-            }
-            Text(filter.title)
-              .font(.caption)
-              .foregroundColor(selectedFilter == filter ? .black : .gray)
-              .fontWeight(.medium)
-          }
-          .padding(.vertical, 8)
-          .padding(.horizontal, 12)
-          .background(selectedFilter == filter ? Color.white : Color.gray.opacity(0.1))
-          .cornerRadius(16)
-          .overlay(
-            RoundedRectangle(cornerRadius: 16)
-              .stroke(
-                selectedFilter == filter ? Color.green : Color.gray.opacity(0.3), lineWidth: 1)
-          )
-        }
-      }
-      Spacer()
-      // 거리순 정렬 버튼 등 추가 가능
-    }
-    .padding(.horizontal)
-  }
-}
-
-enum MyPickFilter: String, CaseIterable {
-  case pick, myPick
-  var title: String {
-    switch self {
-    case .pick: return "픽 전용"
-    case .myPick: return "My Pick"
-    }
-  }
-}
-
-struct StoreCardView: View {
+struct StoreListCellView: View {
   let store: StoreInfo
   let onLikeToggled: () -> Void
 
   var body: some View {
     VStack(alignment: .leading, spacing: 0) {
-      // 가게 이미지 및 정보
-      HStack(alignment: .top, spacing: 12) {
+      HStack(alignment: .top, spacing: 4) {
         // 메인 이미지
-        ZStack(alignment: .topTrailing) {
-          RoundedRectangle(cornerRadius: 8)
-            .fill(Color.gray.opacity(0.2))
-            .frame(width: 120, height: 120)
+        ZStack(alignment: .topLeading) {
+          Rectangle()
+            .fill(Color.gray.opacity(0.08))
             .overlay(
               CachedAsyncImage(
                 url: store.store_image_urls.first ?? "",
                 content: { image in
                   image
                     .resizable()
-                    .frame(width: 200, height: 100)
-                    .aspectRatio(contentMode: .fill)
-
+                    .scaledToFill()
                 },
-                placeholder: {
-                  Color.gray
-                },
-                errorView: { error in
-                  Text(error.localizedDescription)
-                })
-            )
-            .clipped()
-
-          // 좋아요 버튼
-          Button(action: onLikeToggled) {
-            Image(systemName: store.is_pick ? "heart.fill" : "heart")
-              .foregroundColor(store.is_pick ? .red : .white)
-              .font(.system(size: 16))
-              .padding(6)
-              .background(Circle().fill(Color.black.opacity(0.3)))
-          }
-          .padding(6)
-        }
-
-        // 가게 정보
-        VStack(alignment: .leading, spacing: 6) {
-          HStack {
-            VStack(alignment: .leading, spacing: 4) {
-              Text(store.name)
-                .font(.headline)
-                .fontWeight(.bold)
-
-              HStack(spacing: 4) {
-                Image(systemName: "heart.fill")
-                  .foregroundColor(.orange)
-                  .font(.caption)
-
-                Text("\(store.pick_count)개")
-                  .font(.caption)
-                  .foregroundColor(.gray)
-
-                Image(systemName: "star.fill")
-                  .foregroundColor(.orange)
-                  .font(.caption)
-
-                Text(String(format: "%.1f", store.total_rating))
-                  .font(.caption)
-                  .foregroundColor(.gray)
-
-                Text("(\(store.total_review_count))")
-                  .font(.caption)
-                  .foregroundColor(.gray)
-              }
-            }
-
-            Spacer()
-
-            // 픽첼린 배지
-            if store.is_picchelin {
-              Text("픽첼린")
-                .font(.caption2)
-                .fontWeight(.bold)
-                .foregroundColor(.white)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 3)
-                .background(Color.green)
-                .cornerRadius(4)
-            }
-          }
-
-          // 거리, 시간, 주문수 정보
-          HStack(spacing: 8) {
-            HStack(spacing: 2) {
-              Image(systemName: "location.fill")
-                .foregroundColor(.gray)
-                .font(.caption2)
-
-              Text(String(format: "%.1fkm", store.distance ?? 0))
-                .font(.caption)
-                .foregroundColor(.gray)
-            }
-
-            HStack(spacing: 2) {
-              Image(systemName: "clock.fill")
-                .foregroundColor(.gray)
-                .font(.caption2)
-
-              Text(
-                store.close.contains(":")
-                  ? "\(store.close.split(separator: ":").first ?? "")PM" : ""
+                placeholder: { Color.gray.opacity(0.1) },
+                errorView: { error in Text(error.localizedDescription) }
               )
-              .font(.caption)
-              .foregroundColor(.gray)
-            }
-
-            HStack(spacing: 2) {
-              Image(systemName: "bag.fill")
-                .foregroundColor(.gray)
-                .font(.caption2)
-
-              Text("\(store.total_order_count)회")
-                .font(.caption)
-                .foregroundColor(.gray)
-            }
-          }
-
-          // 해시태그
-          if !store.hashTags.isEmpty {
-            HStack(spacing: 6) {
-              ForEach(store.hashTags.prefix(2), id: \.self) { tag in
-                Text(tag)
-                  .font(.caption)
-                  .foregroundColor(.gray)
-                  .padding(.horizontal, 8)
-                  .padding(.vertical, 4)
-                  .background(Color.gray.opacity(0.1))
-                  .cornerRadius(12)
-              }
-            }
-          }
-        }
-      }
-
-      // 하단 추가 이미지들
-      HStack(spacing: 8) {
-        Spacer()
-
-        ForEach(1..<min(4, store.store_image_urls.count + 1)) { i in
-          let imageIndex = min(i, store.store_image_urls.count - 1)
-          RoundedRectangle(cornerRadius: 6)
-            .fill(Color.gray.opacity(0.2))
-            .frame(width: 60, height: 60)
-            .overlay(
-              Image(store.store_image_urls[imageIndex])
-                .resizable()
-                .aspectRatio(contentMode: .fill)
             )
-            .clipped()
+            .clipShape(RoundedRectangle(cornerRadius: 4))
+
+          HStack {
+            // 좋아요 버튼
+            Button(action: onLikeToggled) {
+              Image(store.is_pick ? "like-fill" : "like-empty")
+                .foregroundColor(store.is_pick ? .blackSprout : .white)
+                .font(.system(size: 18, weight: .bold))
+            }
+            .frame(width: 32, height: 32)
+            Spacer()
+            if store.is_picchelin {
+              PickchelinLabel()
+            }
+          }
+          .padding(8)
+          .padding(.leading, 8)
+        }
+
+        if store.store_image_urls.count > 1 {
+          VStack(spacing: 4) {
+            ForEach(1..<min(4, store.store_image_urls.count), id: \.self) { i in
+              RoundedRectangle(cornerRadius: 8)
+                .fill(Color.gray.opacity(0.08))
+                .overlay(
+                  CachedAsyncImage(
+                    url: store.store_image_urls[i],
+                    content: { image in
+                      image
+                        .resizable()
+                        .aspectRatio(1.268, contentMode: .fill)
+                        
+                    },
+                    placeholder: { Color.gray.opacity(0.1) },
+                    errorView: { error in Text(error.localizedDescription) }
+                  )
+                )
+                .frame(width: 78, height: 61.5)
+                .clipShape(RoundedRectangle(cornerRadius: 4))
+            }
+          }
         }
       }
-      .padding(.top, 12)
+      .padding(.bottom, 16)
+      VStack(alignment: .leading, spacing: 8) {
+        HStack(alignment: .center, spacing: 6) {
+          Text(store.name)
+            .font(.Pretendard.body1.weight(.bold))
+            .foregroundColor(.black)
+            .lineLimit(1)
+          statsView(store: store)
+        }
+        infoView(store: store)
+        hashtagView(store: store)
+      }
+      Divider()
+        .padding(.top, 12)
     }
-    .padding(16)
-    .background(Color.white)
-    .cornerRadius(12)
-    .shadow(color: Color.black.opacity(0.08), radius: 4, x: 0, y: 2)
-    .padding(.horizontal)
+    .backgroundStyle(.g15)
+    .padding(.horizontal, 20)
+    .padding(.vertical, 6)
+  }
+
+  private func statsView(store: StoreInfo) -> some View {
+    HStack(spacing: 8) {
+      HStack(spacing: 2) {
+        Image("like-fill")
+          .resizable()
+          .frame(width: 20, height: 20)
+          .foregroundStyle(.brightForsythia)
+        Text("\(store.pick_count)개")
+          .font(.Pretendard.body1.weight(.bold))
+          .foregroundStyle(.g90)
+      }
+      HStack(spacing: 2) {
+        Image("star-fill")
+          .resizable()
+          .frame(width: 20, height: 20)
+          .foregroundColor(.brightForsythia)
+        Text(String(format: "%.1f", store.total_rating))
+          .font(.Pretendard.body1.weight(.bold))
+          .foregroundStyle(.g90)
+        Text("(\(store.total_review_count))")
+          .font(.Pretendard.body1)
+          .foregroundStyle(.g60)
+      }
+    }
+  }
+
+  private func infoView(store: StoreInfo) -> some View {
+    HStack(spacing: 10) {
+      HStack(spacing: 2) {
+        Image("distance")
+          .resizable()
+          .frame(width: 20, height: 20)
+          .foregroundColor(.blackSprout)
+        Text(String(format: "%.1fkm", store.distance ?? 0))
+          .font(.Pretendard.body2)
+          .foregroundColor(.g60)
+      }
+      HStack(spacing: 2) {
+        Image("time")
+          .resizable()
+          .frame(width: 20, height: 20)
+          .foregroundColor(.blackSprout)
+        Text(store.close)
+          .font(.Pretendard.body2)
+          .foregroundColor(.g60)
+      }
+      HStack(spacing: 2) {
+        Image("run")
+          .resizable()
+          .frame(width: 20, height: 20)
+          .foregroundColor(.blackSprout)
+        Text("\(store.total_order_count)회")
+          .font(.Pretendard.body2)
+          .foregroundColor(.g60)
+      }
+    }
+  }
+
+  private func hashtagView(store: StoreInfo) -> some View {
+    Group {
+      if !store.hashTags.isEmpty {
+        HStack(spacing: 6) {
+          ForEach(store.hashTags.prefix(2), id: \.self) { tag in
+            Text(tag)
+              .font(.Pretendard.caption1.weight(.semibold))
+              .foregroundColor(.white)
+              .padding(.horizontal, 8)
+              .padding(.vertical, 2)
+              .background(Color.deepSprout)
+              .cornerRadius(4)
+          }
+        }
+      }
+    }
   }
 }
 
-struct StoreCardHorizontalView: View {
-  let store: StoreInfo
-  let onLikeToggled: () -> Void
+struct PopularStoresListView: View {
+  let stores: [StoreInfo]
+  let onLikeToggled: (String) -> Void
 
   var body: some View {
-    ZStack(alignment: .topTrailing) {
-      RoundedRectangle(cornerRadius: 12)
-        .fill(Color.white)
-        .shadow(color: Color.black.opacity(0.08), radius: 4, x: 0, y: 2)
-        .overlay(
-          VStack(alignment: .leading, spacing: 8) {
-            // 이미지
-            CachedAsyncImage(
-              url: store.store_image_urls.first ?? "",
-              content: { image in
-                image
-                  .resizable()
-                  .aspectRatio(contentMode: .fill)
-                  .frame(height: 100)
-                  .clipped()
-              }, placeholder: { Color.gray }
-            )
-            .cornerRadius(12)
-
-            // 정보
-            VStack(alignment: .leading, spacing: 4) {
-              Text(store.name)
-                .font(.headline)
-                .lineLimit(1)
-              HStack(spacing: 4) {
-                Image(systemName: "heart.fill")
-                  .foregroundColor(.orange)
-                Text("\(store.pick_count)개")
-                  .font(.caption)
-                  .foregroundColor(.gray)
-              }
-              // 거리, 시간, 주문수 등
-              HStack(spacing: 8) {
-                Label(
-                  "\(String(format: "%.1fkm", store.distance ?? 0))", systemImage: "location.fill"
-                )
-                .font(.caption2)
-                .foregroundColor(.gray)
-                Label("\(store.close)", systemImage: "clock.fill")
-                  .font(.caption2)
-                  .foregroundColor(.gray)
-                Label("\(store.total_order_count)회", systemImage: "bag.fill")
-                  .font(.caption2)
-                  .foregroundColor(.gray)
-              }
-            }
-            .padding([.horizontal, .bottom], 8)
-          }
-        )
-      // 하트 버튼
-      Button(action: onLikeToggled) {
-        Image(systemName: store.is_pick ? "heart.fill" : "heart")
-          .foregroundColor(store.is_pick ? .red : .white)
-          .padding(8)
-          .background(Circle().fill(Color.black.opacity(0.3)))
+    ScrollView(.horizontal, showsIndicators: false) {
+      HStack(spacing: 12) {
+        ForEach(stores, id: \.store_id) { store in
+          popularShopItemView(
+            store: store,
+            onLikeToggled: { onLikeToggled(store.store_id) }
+          )
+        }
       }
-      .padding(8)
+      .padding([.horizontal, .bottom], 20)
     }
-    .frame(width: 180, height: 240)
+  }
+
+  private func popularShopItemView(store: StoreInfo, onLikeToggled: @escaping () -> Void)
+    -> some View
+  {
+    VStack(spacing: 0) {
+      header(
+        isLiked: store.is_pick,
+        onLikeToggled: onLikeToggled
+      )
+      Spacer()
+      infoView(store: store)
+        .frame(height: 56)
+    }
+    .frame(width: 240, height: 176)
+    .background(
+      CachedAsyncImage(
+        url: store.store_image_urls.first ?? "",
+        content: { image in
+          image
+            .resizable()
+            .scaledToFill()
+        },
+        placeholder: {
+          Color.gray
+
+        },
+        errorView: { error in
+          Text(error.localizedDescription)
+        }
+      )
+    )
+    .clipShape(RoundedRectangle(cornerRadius: 16))
+    .shadow(color: Color.black.opacity(0.06), radius: 4, x: 0, y: 2)
+
+  }
+  private func header(
+    isLiked: Bool,
+    onLikeToggled: @escaping () -> Void
+  ) -> some View {
+    HStack {
+      likeButton(isLiked: isLiked, onLikeToggled: onLikeToggled)
+      Spacer()
+      PickchelinLabel()
+    }
+    .padding(.horizontal, 12)
+  }
+
+  private func likeButton(isLiked: Bool, onLikeToggled: @escaping () -> Void) -> some View {
+    Button(action: onLikeToggled) {
+      Image(isLiked ? "like-fill" : "like-empty")
+        .foregroundColor(isLiked ? .blackSprout : .g30)
+        .padding(8)
+    }
+  }
+
+  private func infoView(store: StoreInfo) -> some View {
+    VStack(alignment: .leading, spacing: 6) {
+      HStack(spacing: 6) {
+        Text(store.name)
+          .font(.Pretendard.body1.weight(.bold))
+          .foregroundColor(.black)
+          .lineLimit(1)
+          .padding(.leading, 10)
+        HStack(spacing: 4) {
+          Image("like-fill")
+            .resizable()
+            .frame(width: 16, height: 16)
+            .foregroundColor(.brightForsythia)
+          Text("\(store.pick_count)개")
+            .font(.Pretendard.body3.weight(.bold))
+            .foregroundColor(.g90)
+        }
+        Spacer()
+      }
+
+      HStack(spacing: 6) {
+        Image("distance")
+          .resizable()
+          .frame(width: 16, height: 16)
+          .padding(.leading, 10)
+
+          .foregroundColor(.blackSprout)
+        Text("\(store.distance ?? 0)km")
+          .font(.Pretendard.body3)
+          .foregroundColor(.g75)
+        Image("time")
+          .resizable()
+          .frame(width: 16, height: 16)
+
+          .foregroundColor(.blackSprout)
+        Text(store.close)
+          .font(.Pretendard.body3)
+          .foregroundColor(.g75)
+        Image("run")
+          .resizable()
+          .frame(width: 16, height: 16)
+          .foregroundColor(.blackSprout)
+        Text("\(store.total_order_count)회")
+          .font(.Pretendard.body3)
+          .foregroundColor(.g75)
+      }
+    }
+    .frame(maxWidth: .infinity)
+    .frame(height: 56)
+    .background(Color.white)
   }
 }
 
@@ -741,124 +702,27 @@ extension StoreInfo: Identifiable {
   var id: String { store_id }
 }
 
-struct LocationSelectView: View {
-  @Environment(\.dismiss) private var dismiss
-  @State private var region = MKCoordinateRegion(
-    center: CLLocationCoordinate2D(latitude: 37.5133, longitude: 126.9269),
-    span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
-  )
-  @State private var address: String = "서울 동작구 여의대방로22마길 22"
-  @State private var detailAddress: String = "서울 동작구 신대방동 364-9"
+enum MyPickSort: String, CaseIterable {
+  case latest = "최신순"
+  case distance = "거리순"
+  case rating = "평점순"
+  var title: String { rawValue }
+}
 
+struct PickchelinLabel: View {
   var body: some View {
-    VStack(spacing: 0) {
-      // 네비게이션 바
-      HStack {
-        Button(action: { dismiss() }) {
-          Image(systemName: "chevron.left")
-            .font(.title3)
-            .foregroundColor(.black)
-        }
-        Spacer()
-        Text("지도에서 위치 확인")
-          .font(.pretendardTitle1)
-          .foregroundColor(.black)
-        Spacer().frame(width: 24)  // 좌우 균형
+    ZStack(alignment: .leading) {
+      Image("pickchelin-tag")
+      HStack(spacing: 4) {
+        Image("pick-fill")
+          .resizable()
+          .frame(width: 12, height: 12)
+          .foregroundColor(.white)
+        Text("픽슐랭")
+          .font(.Pretendard.caption2)
+          .foregroundColor(.white)
       }
-      .padding(.horizontal)
-      .padding(.top, 16)
-      .padding(.bottom, 8)
-
-      ZStack {
-        // 지도
-        Map(coordinateRegion: $region, interactionModes: .all)
-          .frame(height: 400)
-          .clipShape(RoundedRectangle(cornerRadius: 0))
-          .edgesIgnoringSafeArea(.horizontal)
-
-        // 중앙 핀
-        VStack(spacing: 0) {
-          Spacer()
-          Image("pin-face")  // 실제 핀 아이콘 리소스 적용
-            .resizable()
-            .frame(width: 48, height: 48)
-            .shadow(radius: 4)
-          Spacer().frame(height: 180)
-        }
-        // 안내 말풍선
-        VStack {
-          Spacer().frame(height: 180)
-          HStack {
-            Spacer()
-            Text("바꾼 위치가 주소와 같은지 확인해주세요")
-              .font(.pretendardBody2)
-              .foregroundColor(.white)
-              .padding(.horizontal, 16)
-              .padding(.vertical, 8)
-              .background(
-                Capsule()
-                  .fill(Color.black)
-              )
-            Spacer()
-          }
-          Spacer()
-        }
-      }
-      .frame(height: 400)
-      .background(Color.gray.opacity(0.05))
-      .overlay(
-        // 우측 하단 위치 초기화 버튼
-        VStack {
-          Spacer()
-          HStack {
-            Spacer()
-            Button(action: {
-              // 현위치로 이동 로직
-            }) {
-              Image(systemName: "location.circle.fill")
-                .resizable()
-                .frame(width: 40, height: 40)
-                .foregroundColor(.white)
-                .background(Circle().fill(Color.black.opacity(0.7)))
-            }
-            .padding(.trailing, 16)
-            .padding(.bottom, 16)
-          }
-        }
-      )
-      Spacer()
-      // 하단 시트 스타일
-      VStack(spacing: 12) {
-        Text(address)
-          .font(.pretendardTitle1)
-          .foregroundColor(.black)
-          .frame(maxWidth: .infinity, alignment: .leading)
-        Text(detailAddress)
-          .font(.pretendardBody1)
-          .foregroundColor(.gray)
-          .frame(maxWidth: .infinity, alignment: .leading)
-        Button(action: {
-          // 주소 등록 액션
-        }) {
-          Text("이 위치로 주소 등록")
-            .font(.pretendardTitle1)
-            .foregroundColor(.white)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
-            .background(Color.deepSprout)
-            .cornerRadius(8)
-        }
-      }
-      .padding(.horizontal, 20)
-      .padding(.top, 16)
-      .padding(.bottom, 32)
-      .background(
-        RoundedRectangle(cornerRadius: 24)
-          .fill(Color.white)
-          .shadow(color: Color.black.opacity(0.06), radius: 8, x: 0, y: -2)
-      )
+      .padding([.vertical, .leading], 4)
     }
-    .background(Color.white.ignoresSafeArea())
-    .tabBarHidden()
   }
 }

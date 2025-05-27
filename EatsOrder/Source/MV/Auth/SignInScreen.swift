@@ -162,11 +162,11 @@ struct SignInView: View {
         // 중앙 타이틀
         VStack(spacing: 16) {
           Text("기다리지 않는 VIP가 되는 법")
-            .font(.system(size: 20, weight: .semibold))
+            .font(.Pretendard.custom(24, weight: .bold))
             .foregroundColor(.white)
           
           Text("잇츠오더")
-            .font(.system(size: 38, weight: .bold))
+            .font(.Pretendard.custom(24, weight: .bold))
             .foregroundColor(.white)
         }
         

@@ -135,7 +135,7 @@ struct StoreSearchResponse: Decodable {
 }
 
 // 5. 실시간 인기 가게 조회 응답 (배열 형태로 반환)
-typealias PopularStoresResponse = [StoreInfo]
+typealias PopularStoresResponse = StoreSearchResponse
 
 // 6. 인기 검색어 목록 조회 응답
 struct PopularSearchesResponse: Decodable {
@@ -144,3 +144,11 @@ struct PopularSearchesResponse: Decodable {
 
 // 7. 내가 좋아요한 가게 조회 응답 (StoreListResponse와 동일한 구조)
 typealias MyLikedStoresResponse = StoreListResponse
+
+// ISO8601 String -> Date 변환 헬퍼
+extension String {
+  func toDate() -> Date? {
+    let formatter = ISO8601DateFormatter()
+    return formatter.date(from: self)
+  }
+}
