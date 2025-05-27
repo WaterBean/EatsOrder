@@ -97,15 +97,15 @@ struct MainHomeScreen: View {
   }
 
   // 필터/정렬 적용 함수
-  var filteredAndSortedStores: [StoreInfo] {
+  var filteredAndSortedStores: [Store] {
     var result = storeModel.storeList
     // 필터
     if filterPickchelin && filterMyPick {
-      result = result.filter { $0.is_picchelin && $0.is_pick }
+      result = result.filter { $0.isPicchelin && $0.isPick }
     } else if filterPickchelin {
-      result = result.filter { $0.is_picchelin }
+      result = result.filter { $0.isPicchelin }
     } else if filterMyPick {
-      result = result.filter { $0.is_pick }
+      result = result.filter { $0.isPick }
     }
     // 둘 다 해제면 전체
     // 정렬
@@ -119,15 +119,15 @@ struct MainHomeScreen: View {
         ($0.distance ?? .greatestFiniteMagnitude) < ($1.distance ?? .greatestFiniteMagnitude)
       }
     case .rating:
-      return result.sorted { $0.total_rating > $1.total_rating }
+      return result.sorted { $0.totalRating > $1.totalRating }
     }
   }
 }
 
 struct MainHomeView: View {
   // 전달받은 데이터
-  let storeList: [StoreInfo]
-  let popularStores: [StoreInfo]
+  let storeList: [Store]
+  let popularStores: [Store]
   let banners: [BannerInfo]
   let categories: [(name: String, icon: String)]
   let location: String
@@ -143,7 +143,7 @@ struct MainHomeView: View {
   @Binding var myPickSort: MyPickSort
   @Binding var filterPickchelin: Bool
   @Binding var filterMyPick: Bool
-  let filteredAndSortedStores: [StoreInfo]
+  let filteredAndSortedStores: [Store]
 
   // 내부 상태
   @State private var selectedCategory: String? = nil
@@ -243,8 +243,8 @@ struct MainHomeView: View {
             .padding(.horizontal)
 
             // 리스트 렌더링 (필터/정렬 적용)
-            ForEach(filteredAndSortedStores, id: \.store_id) { store in
-              StoreListCellView(store: store, onLikeToggled: { onLikeToggled(store.store_id) })
+            ForEach(filteredAndSortedStores, id: \.id) { store in
+              StoreListCellView(store: store, onLikeToggled: { onLikeToggled(store.id) })
             }
           }
           .background(.g0)
@@ -410,180 +410,18 @@ struct BannerView: View {
   }
 }
 
-struct StoreListCellView: View {
-  let store: StoreInfo
-  let onLikeToggled: () -> Void
-
-  var body: some View {
-    VStack(alignment: .leading, spacing: 0) {
-      HStack(alignment: .top, spacing: 4) {
-        // 메인 이미지
-        ZStack(alignment: .topLeading) {
-          Rectangle()
-            .fill(Color.gray.opacity(0.08))
-            .overlay(
-              CachedAsyncImage(
-                url: store.store_image_urls.first ?? "",
-                content: { image in
-                  image
-                    .resizable()
-                    .scaledToFill()
-                },
-                placeholder: { Color.gray.opacity(0.1) },
-                errorView: { error in Text(error.localizedDescription) }
-              )
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 4))
-
-          HStack {
-            // 좋아요 버튼
-            Button(action: onLikeToggled) {
-              Image(store.is_pick ? "like-fill" : "like-empty")
-                .foregroundColor(store.is_pick ? .blackSprout : .white)
-                .font(.system(size: 18, weight: .bold))
-            }
-            .frame(width: 32, height: 32)
-            Spacer()
-            if store.is_picchelin {
-              PickchelinLabel()
-            }
-          }
-          .padding(8)
-          .padding(.leading, 8)
-        }
-
-        if store.store_image_urls.count > 1 {
-          VStack(spacing: 4) {
-            ForEach(1..<min(4, store.store_image_urls.count), id: \.self) { i in
-              RoundedRectangle(cornerRadius: 8)
-                .fill(Color.gray.opacity(0.08))
-                .overlay(
-                  CachedAsyncImage(
-                    url: store.store_image_urls[i],
-                    content: { image in
-                      image
-                        .resizable()
-                        .aspectRatio(1.268, contentMode: .fill)
-                        
-                    },
-                    placeholder: { Color.gray.opacity(0.1) },
-                    errorView: { error in Text(error.localizedDescription) }
-                  )
-                )
-                .frame(width: 78, height: 61.5)
-                .clipShape(RoundedRectangle(cornerRadius: 4))
-            }
-          }
-        }
-      }
-      .padding(.bottom, 16)
-      VStack(alignment: .leading, spacing: 8) {
-        HStack(alignment: .center, spacing: 6) {
-          Text(store.name)
-            .font(.Pretendard.body1.weight(.bold))
-            .foregroundColor(.black)
-            .lineLimit(1)
-          statsView(store: store)
-        }
-        infoView(store: store)
-        hashtagView(store: store)
-      }
-      Divider()
-        .padding(.top, 12)
-    }
-    .backgroundStyle(.g15)
-    .padding(.horizontal, 20)
-    .padding(.vertical, 6)
-  }
-
-  private func statsView(store: StoreInfo) -> some View {
-    HStack(spacing: 8) {
-      HStack(spacing: 2) {
-        Image("like-fill")
-          .resizable()
-          .frame(width: 20, height: 20)
-          .foregroundStyle(.brightForsythia)
-        Text("\(store.pick_count)개")
-          .font(.Pretendard.body1.weight(.bold))
-          .foregroundStyle(.g90)
-      }
-      HStack(spacing: 2) {
-        Image("star-fill")
-          .resizable()
-          .frame(width: 20, height: 20)
-          .foregroundColor(.brightForsythia)
-        Text(String(format: "%.1f", store.total_rating))
-          .font(.Pretendard.body1.weight(.bold))
-          .foregroundStyle(.g90)
-        Text("(\(store.total_review_count))")
-          .font(.Pretendard.body1)
-          .foregroundStyle(.g60)
-      }
-    }
-  }
-
-  private func infoView(store: StoreInfo) -> some View {
-    HStack(spacing: 10) {
-      HStack(spacing: 2) {
-        Image("distance")
-          .resizable()
-          .frame(width: 20, height: 20)
-          .foregroundColor(.blackSprout)
-        Text(String(format: "%.1fkm", store.distance ?? 0))
-          .font(.Pretendard.body2)
-          .foregroundColor(.g60)
-      }
-      HStack(spacing: 2) {
-        Image("time")
-          .resizable()
-          .frame(width: 20, height: 20)
-          .foregroundColor(.blackSprout)
-        Text(store.close)
-          .font(.Pretendard.body2)
-          .foregroundColor(.g60)
-      }
-      HStack(spacing: 2) {
-        Image("run")
-          .resizable()
-          .frame(width: 20, height: 20)
-          .foregroundColor(.blackSprout)
-        Text("\(store.total_order_count)회")
-          .font(.Pretendard.body2)
-          .foregroundColor(.g60)
-      }
-    }
-  }
-
-  private func hashtagView(store: StoreInfo) -> some View {
-    Group {
-      if !store.hashTags.isEmpty {
-        HStack(spacing: 6) {
-          ForEach(store.hashTags.prefix(2), id: \.self) { tag in
-            Text(tag)
-              .font(.Pretendard.caption1.weight(.semibold))
-              .foregroundColor(.white)
-              .padding(.horizontal, 8)
-              .padding(.vertical, 2)
-              .background(Color.deepSprout)
-              .cornerRadius(4)
-          }
-        }
-      }
-    }
-  }
-}
 
 struct PopularStoresListView: View {
-  let stores: [StoreInfo]
+  let stores: [Store]
   let onLikeToggled: (String) -> Void
 
   var body: some View {
     ScrollView(.horizontal, showsIndicators: false) {
       HStack(spacing: 12) {
-        ForEach(stores, id: \.store_id) { store in
+        ForEach(stores, id: \.id) { store in
           popularShopItemView(
             store: store,
-            onLikeToggled: { onLikeToggled(store.store_id) }
+            onLikeToggled: { onLikeToggled(store.id) }
           )
         }
       }
@@ -591,12 +429,12 @@ struct PopularStoresListView: View {
     }
   }
 
-  private func popularShopItemView(store: StoreInfo, onLikeToggled: @escaping () -> Void)
+  private func popularShopItemView(store: Store, onLikeToggled: @escaping () -> Void)
     -> some View
   {
     VStack(spacing: 0) {
       header(
-        isLiked: store.is_pick,
+        isLiked: store.isPick,
         onLikeToggled: onLikeToggled
       )
       Spacer()
@@ -606,7 +444,7 @@ struct PopularStoresListView: View {
     .frame(width: 240, height: 176)
     .background(
       CachedAsyncImage(
-        url: store.store_image_urls.first ?? "",
+        url: store.storeImageurls.first ?? "",
         content: { image in
           image
             .resizable()
@@ -645,7 +483,7 @@ struct PopularStoresListView: View {
     }
   }
 
-  private func infoView(store: StoreInfo) -> some View {
+  private func infoView(store: Store) -> some View {
     VStack(alignment: .leading, spacing: 6) {
       HStack(spacing: 6) {
         Text(store.name)
@@ -658,7 +496,7 @@ struct PopularStoresListView: View {
             .resizable()
             .frame(width: 16, height: 16)
             .foregroundColor(.brightForsythia)
-          Text("\(store.pick_count)개")
+          Text("\(store.pickCount)개")
             .font(.Pretendard.body3.weight(.bold))
             .foregroundColor(.g90)
         }
@@ -687,7 +525,7 @@ struct PopularStoresListView: View {
           .resizable()
           .frame(width: 16, height: 16)
           .foregroundColor(.blackSprout)
-        Text("\(store.total_order_count)회")
+        Text("\(store.totalOrderCount)회")
           .font(.Pretendard.body3)
           .foregroundColor(.g75)
       }
@@ -696,10 +534,6 @@ struct PopularStoresListView: View {
     .frame(height: 56)
     .background(Color.white)
   }
-}
-
-extension StoreInfo: Identifiable {
-  var id: String { store_id }
 }
 
 enum MyPickSort: String, CaseIterable {

@@ -21,12 +21,14 @@ extension Font {
 
     enum Weight {
       case bold
+      case semibold
       case medium
       case regular
 
       var name: String {
         switch self {
         case .bold: return "Pretendard-Bold"
+        case .semibold: return "Pretendard-SemiBold"
         case .medium: return "Pretendard-Medium"
         case .regular: return "Pretendard-Regular"
         }

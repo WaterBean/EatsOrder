@@ -59,6 +59,27 @@ struct StoreInfo: Decodable {
   let distance: Double?
   let createdAt: String
   let updatedAt: String
+
+  func toEntity() -> Store {
+    return Store(
+      storeId: store_id,
+      category: category,
+      name: name,
+      close: close,
+      storeImageurls: store_image_urls,
+      isPicchelin: is_picchelin,
+      isPick: is_pick,
+      pickCount: pick_count,
+      hashTags: hashTags,
+      totalRating: total_rating,
+      totalOrderCount: total_order_count,
+      totalReviewCount: total_review_count,
+      geolocation: geolocation,
+      distance: distance,
+      createdAt: createdAt,
+      updatedAt: updatedAt
+    )
+  }
 }
 
 // 위치 정보 모델

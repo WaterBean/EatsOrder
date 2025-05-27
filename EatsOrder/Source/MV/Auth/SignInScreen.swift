@@ -160,13 +160,13 @@ struct SignInView: View {
         Spacer()
         
         // 중앙 타이틀
-        VStack(spacing: 16) {
+        VStack(spacing: 4) {
           Text("기다리지 않는 VIP가 되는 법")
-            .font(.Pretendard.custom(24, weight: .bold))
+            .font(.Pretendard.custom(24, weight: .semibold))
             .foregroundColor(.white)
           
           Text("잇츠오더")
-            .font(.Pretendard.custom(24, weight: .bold))
+            .font(.Pretendard.custom(24, weight: .semibold))
             .foregroundColor(.white)
         }
         
