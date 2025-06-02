@@ -162,7 +162,7 @@ final class StoreModel: ObservableObject {
     do {
       // 카테고리와 위치 정보로 API 호출
       if let coordinates = locationManager.getCurrentCoordinates() {
-        let response: StoreListResponse = try await networkService.request(
+        let response: StoreListResponse<StoreInfo> = try await networkService.request(
           endpoint: StoreEndpoint.storeList(
             category: category,
             longitude: Float(coordinates.longitude),
@@ -192,7 +192,7 @@ final class StoreModel: ObservableObject {
 
     do {
       if let coordinates = locationManager.getCurrentCoordinates() {
-        let response: StoreListResponse = try await networkService.request(
+        let response: StoreListResponse<StoreInfo> = try await networkService.request(
           endpoint: StoreEndpoint.storeList(
             category: category,
             longitude: Float(coordinates.longitude),
@@ -219,7 +219,7 @@ final class StoreModel: ObservableObject {
   func loadMyPickStores() async {
     dispatch(.setLoading(isLoading: true))
     do {
-      let response: StoreListResponse = try await networkService.request(
+      let response: StoreListResponse<StoreInfo> = try await networkService.request(
         endpoint: StoreEndpoint.myLikedStores(category: nil, next: nil, limit: "20")
       )
       let sorted = sortMyPickStores(response.data.map { $0.toEntity() }, by: myPickSort)
@@ -236,12 +236,25 @@ final class StoreModel: ObservableObject {
     myPickStores = sortMyPickStores(myPickStores, by: sort)
   }
 
+  func fetchDetail(storeId: String) async -> StoreDetail {
+    do {
+      let response: StoreDetailResponse = try await networkService.request(
+        endpoint: StoreEndpoint.storeDetail(storeId: storeId)
+      )
+      return response.toEntity()
+    } catch {
+      print(error.localizedDescription, "여기가 문제다")
+      handleError(error: error, defaultMessage: "가게 상세 정보 로드 실패")
+    }
+    return StoreDetail(id: "", name: "", imageUrls: [], isPicchelin: false, isPick: false, pickCount: 0, rating: 0, reviewCount: 0, orderCount: 0, address: "", openTime: "", closeTime: "", parking: "", estimatedTime: "", distance: nil, menus: [])
+  }
+
   // MARK: - 내부 메서드
 
   // 주변 가게 로드
   private func loadNearbyStores(latitude: Double, longitude: Double) async {
     do {
-      let response: StoreListResponse = try await networkService.request(
+      let response: StoreListResponse<StoreInfo> = try await networkService.request(
         endpoint: StoreEndpoint.storeList(
           category: category,
           longitude: Float(longitude),

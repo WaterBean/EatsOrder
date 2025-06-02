@@ -14,3 +14,7 @@ var screenWidth: CGFloat {
 var screenHeight: CGFloat {
   UIScreen.main.bounds.height
 }
+
+var screenTopPadding: CGFloat {
+  UIApplication.shared.windows.first?.safeAreaInsets.top ?? 0
+}

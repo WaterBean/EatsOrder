@@ -34,3 +34,40 @@ struct Store: Identifiable {
 
   var id: String { storeId }
 }
+
+// MARK: - Entity
+struct StoreDetail: Identifiable {
+  let id: String
+  let name: String
+  let imageUrls: [String]
+  let isPicchelin: Bool
+  var isPick: Bool
+  let pickCount: Int
+  let rating: Double
+  let reviewCount: Int
+  let orderCount: Int
+  let address: String
+  let openTime: String
+  let closeTime: String
+  let parking: String
+  let estimatedTime: String
+  let distance: Double?
+  let menus: [Menu]
+
+  // StoreDetail.Menu (Entity)
+  struct Menu: Identifiable {
+    let id: String
+    let storeId: String
+    let category: String
+    let name: String
+    let description: String
+    let originInformation: String
+    let price: Int
+    let isSoldOut: Bool
+    let tags: [String]
+    let imageUrl: String?
+    let createdAt: String
+    let updatedAt: String
+    let isPopular: Bool
+  }
+}

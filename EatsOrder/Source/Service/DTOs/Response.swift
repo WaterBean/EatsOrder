@@ -92,45 +92,29 @@ struct GeoLocation: Decodable {
 struct Creator: Decodable {
   let user_id: String
   let nick: String
-  let profileImage: String
-}
-
-// 메뉴 정보 모델
-struct MenuItem: Decodable {
-  let menu_id: String
-  let store_id: String
-  let category: String
-  let name: String
-  let description: String
-  let origin_information: String
-  let price: Int
-  let is_sold_out: Bool
-  let tags: [String]
-  let menu_image_url: String
-  let createdAt: String
-  let updatedAt: String
+  let profileImage: String?
 }
 
 // MARK: - 응답 DTO
 
 // 1. 위치 기반 주변 가게 목록 조회 응답
-struct StoreListResponse: Decodable {
-  let data: [StoreInfo]
+struct StoreListResponse<T: Decodable>: Decodable {
+  let data: [T]
   let next_cursor: String
 }
 
 // 2. 가게 상세 정보 조회 응답
 struct StoreDetailResponse: Decodable {
   let store_id: String
-  let category: String
-  let name: String
-  let description: String
+  let category: String?
+  let name: String?
+  let description: String?
   let hashTags: [String]
-  let open: String
-  let close: String
-  let address: String
+  let open: String?
+  let close: String?
+  let address: String?
   let estimated_pickup_time: Int
-  let parking_guide: String
+  let parking_guide: String?
   let store_image_urls: [String]
   let is_picchelin: Bool
   let is_pick: Bool
@@ -143,6 +127,63 @@ struct StoreDetailResponse: Decodable {
   let menu_list: [MenuItem]
   let createdAt: String
   let updatedAt: String
+
+  func toEntity() -> StoreDetail {
+    return StoreDetail(
+      id: store_id,
+      name: name ?? "",
+      imageUrls: store_image_urls,
+      isPicchelin: is_picchelin,
+      isPick: is_pick,
+      pickCount: pick_count,
+      rating: total_rating,
+      reviewCount: total_review_count,
+      orderCount: total_order_count,
+      address: address ?? "",
+      openTime: open ?? "",
+      closeTime: close ?? "",
+      parking: parking_guide ?? "",
+      estimatedTime: "\(estimated_pickup_time)분",
+      distance: nil,
+      menus: menu_list.map { $0.toEntity() }
+    )
+  }
+}
+
+struct MenuItem: Decodable {
+  let menu_id: String
+  let store_id: String
+  let category: String
+  let name: String
+  let description: String
+  let origin_information: String
+  let price: Int
+  let is_sold_out: Bool
+  let tags: [String]
+  let menu_image_url: String?
+  let createdAt: String
+  let updatedAt: String
+
+  func toEntity() -> StoreDetail.Menu {
+    let isPopular = tags.contains {
+      $0.localizedCaseInsensitiveContains("인기") || $0.localizedCaseInsensitiveContains("popular")
+    }
+    return StoreDetail.Menu(
+      id: menu_id,
+      storeId: store_id,
+      category: category,
+      name: name,
+      description: description,
+      originInformation: origin_information,
+      price: price,
+      isSoldOut: is_sold_out,
+      tags: tags,
+      imageUrl: menu_image_url,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+      isPopular: isPopular
+    )
+  }
 }
 
 // 3. 가게 좋아요/좋아요 취소 응답

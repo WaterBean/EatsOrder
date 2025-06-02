@@ -25,7 +25,7 @@ enum EatsOrderTab: Int, Hashable, CaseIterable {
 }
 
 // 탭별 라우트 정의
-enum HomeRoute: Hashable { case main, locationSelect }
+enum HomeRoute: Hashable { case main, locationSelect, storeDetail(storeId: String) }
 enum OrderRoute: Hashable { case main }
 enum CommunityRoute: Hashable { case main }
 enum ProfileRoute: Hashable { case main }
@@ -38,7 +38,10 @@ extension HomeRoute {
       MainHomeScreen()
     case .locationSelect:
       LocationSelectView()
+    case .storeDetail(let storeId):
+      StoreDetailScreen(storeId: storeId)
     }
+
   }
 }
 

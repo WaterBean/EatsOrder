@@ -66,6 +66,9 @@ struct MainHomeScreen: View {
       onLocationSelected: {
         navigate(.push(HomeRoute.locationSelect))
       },
+      onStoreDetailSelected: { storeId in
+        navigate(.push(HomeRoute.storeDetail(storeId: storeId)))
+      },
       myPickSort: $myPickSort,
       filterPickchelin: $filterPickchelin,
       filterMyPick: $filterMyPick,
@@ -139,6 +142,7 @@ struct MainHomeView: View {
   let onLikeToggled: (String) -> Void
   let onLoadMore: () -> Void
   let onLocationSelected: () -> Void
+  let onStoreDetailSelected: (String) -> Void
   // 상태를 Binding으로 전달
   @Binding var myPickSort: MyPickSort
   @Binding var filterPickchelin: Bool
@@ -185,7 +189,8 @@ struct MainHomeView: View {
             // 인기 맛집 목록 (가로 스크롤)
             PopularStoresListView(
               stores: popularStores,
-              onLikeToggled: onLikeToggled
+              onLikeToggled: onLikeToggled,
+              onStoreDetailSelected: onStoreDetailSelected
             )
 
             // 배너 영역
@@ -244,7 +249,11 @@ struct MainHomeView: View {
 
             // 리스트 렌더링 (필터/정렬 적용)
             ForEach(filteredAndSortedStores, id: \.id) { store in
-              StoreListCellView(store: store, onLikeToggled: { onLikeToggled(store.id) })
+              StoreListCellView(store: store, onLikeToggled: { onLikeToggled(store.id) }
+              )
+              .onTapGesture {
+                onStoreDetailSelected(store.id)
+              }
             }
           }
           .background(.g0)
@@ -414,6 +423,7 @@ struct BannerView: View {
 struct PopularStoresListView: View {
   let stores: [Store]
   let onLikeToggled: (String) -> Void
+  let onStoreDetailSelected: (String) -> Void
 
   var body: some View {
     ScrollView(.horizontal, showsIndicators: false) {
@@ -423,6 +433,9 @@ struct PopularStoresListView: View {
             store: store,
             onLikeToggled: { onLikeToggled(store.id) }
           )
+          .onTapGesture {
+                onStoreDetailSelected(store.id)
+          }
         }
       }
       .padding([.horizontal, .bottom], 20)

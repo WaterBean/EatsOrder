@@ -18,7 +18,7 @@ final class LoggingMiddleware: Middleware {
 
   func prepare(request: inout URLRequest) {
     // 요청 ID 생성
-    let requestId = "\(request.url?.absoluteString ?? "unknown")_\(Date().timeIntervalSince1970)"
+    let requestId = "\(request.url?.absoluteString ?? "unknown")_\(Date().timeIntervalSince1970.formatted())"
 
     // 요청 ID를 헤더에 추가
     request.setValue(requestId, forHTTPHeaderField: "X-Request-ID")
@@ -55,4 +55,19 @@ final class LoggingMiddleware: Middleware {
 
     return .success(false)
   }
+
+  func didReceive(response: HTTPURLResponse, data: Data) {
+    print("✅ [RESPONSE] \(response.statusCode) \(response.url?.absoluteString ?? "")")
+    if let bodyString = String(data: data, encoding: .utf8) {
+      print("Response Body: \(bodyString)")
+    }
+  }
+
+  func didFail(error: Error, request: URLRequest, data: Data?) {
+    print("🛑 [DECODE ERROR] \(error.localizedDescription)")
+    if let data = data, let bodyString = String(data: data, encoding: .utf8) {
+      print("Failed Body: \(bodyString)")
+    }
+  }
+
 }

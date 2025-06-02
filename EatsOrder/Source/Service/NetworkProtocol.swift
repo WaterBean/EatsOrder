@@ -23,8 +23,14 @@ protocol NetworkProtocol {
 protocol Middleware {
   func prepare(request: inout URLRequest)
   func process(response: HTTPURLResponse, data: Data) async throws -> Result<Bool, Error>
+  func didReceive(response: HTTPURLResponse, data: Data)
+  func didFail(error: Error, request: URLRequest, data: Data?)
 }
 
+extension Middleware {
+  func didReceive(response: HTTPURLResponse, data: Data) { }
+  func didFail(error: Error, request: URLRequest, data: Data?) { }
+}
 protocol EndpointProtocol {
   var baseURL: URL? { get }
   var path: String { get }

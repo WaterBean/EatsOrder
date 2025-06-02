@@ -78,7 +78,7 @@ actor ImageCacheManager {
           lastModified: entry.lastModified,
           currentImage: entry.image
         ) {
-          await storeInMemory(entry: CacheEntry(
+          storeInMemory(entry: CacheEntry(
             image: validatedImage,
             etag: entry.etag,
             lastModified: entry.lastModified
@@ -90,7 +90,7 @@ actor ImageCacheManager {
       // 네트워크에서 다운로드
       let (networkImage, etag, lastModified) = try await downloadFromNetwork(urlString: urlString)
       let newEntry = CacheEntry(image: networkImage, etag: etag, lastModified: lastModified)
-      await storeEntry(newEntry, key: cacheKey)
+      storeEntry(newEntry, key: cacheKey)
       return networkImage
     }
     

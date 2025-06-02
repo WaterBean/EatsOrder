@@ -127,5 +127,6 @@ struct LocationSelectView: View {
     }
     .background(Color.white.ignoresSafeArea())
     .tabBarHidden()
+    .navigationBarBackButtonHidden(true)
   }
 }
