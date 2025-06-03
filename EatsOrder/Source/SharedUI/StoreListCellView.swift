@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct StoreListCellView: View {
-  let store: Store
+  let store: StoreInfo
   let onLikeToggled: () -> Void
 
   var body: some View {
@@ -20,7 +20,7 @@ struct StoreListCellView: View {
             .fill(Color.gray.opacity(0.08))
             .overlay(
               CachedAsyncImage(
-                url: store.storeImageurls.first ?? "",
+                url: store.storeImageUrls.first ?? "",
                 content: { image in
                   image
                     .resizable()
@@ -49,14 +49,14 @@ struct StoreListCellView: View {
           .padding(.leading, 8)
         }
 
-        if store.storeImageurls.count > 1 {
+        if store.storeImageUrls.count > 1 {
           VStack(spacing: 4) {
-            ForEach(1..<min(4, store.storeImageurls.count), id: \.self) { i in
+            ForEach(1..<min(4, store.storeImageUrls.count), id: \.self) { i in
               RoundedRectangle(cornerRadius: 8)
                 .fill(Color.gray.opacity(0.08))
                 .overlay(
                   CachedAsyncImage(
-                    url: store.storeImageurls[i],
+                    url: store.storeImageUrls[i],
                     content: { image in
                       image
                         .resizable()
@@ -93,7 +93,7 @@ struct StoreListCellView: View {
     .padding(.vertical, 6)
   }
 
-  private func statsView(store: Store) -> some View {
+  private func statsView(store: StoreInfo) -> some View {
     HStack(spacing: 8) {
       HStack(spacing: 2) {
         Image("like-fill")
@@ -119,14 +119,14 @@ struct StoreListCellView: View {
     }
   }
 
-  private func infoView(store: Store) -> some View {
+  private func infoView(store: StoreInfo) -> some View {
     HStack(spacing: 10) {
       HStack(spacing: 2) {
         Image("distance")
           .resizable()
           .frame(width: 20, height: 20)
           .foregroundColor(.blackSprout)
-        Text(String(format: "%.1fkm", store.distance ?? 0))
+        Text(String(format: "%.1fkm", store.geolocation.longitude ?? 0))
           .font(.Pretendard.body2)
           .foregroundColor(.g60)
       }
@@ -135,7 +135,7 @@ struct StoreListCellView: View {
           .resizable()
           .frame(width: 20, height: 20)
           .foregroundColor(.blackSprout)
-        Text(store.close)
+        Text(store.close ?? "정보 없음  ")
           .font(.Pretendard.body2)
           .foregroundColor(.g60)
       }
@@ -151,7 +151,7 @@ struct StoreListCellView: View {
     }
   }
 
-  private func hashtagView(store: Store) -> some View {
+  private func hashtagView(store: StoreInfo) -> some View {
     Group {
       if !store.hashTags.isEmpty {
         HStack(spacing: 6) {

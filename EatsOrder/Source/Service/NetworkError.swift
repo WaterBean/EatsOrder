@@ -16,14 +16,28 @@ enum NetworkError: Error {
   case authRetryNeeded
   case maxRetriesExceeded
   
-  // 메시지 접근을 위한 간단한 계산 속성
-  var serverMessage: String? {
+}
+
+extension NetworkError: LocalizedError {
+  var localizedDescription: String? {
     switch self {
-    case .serverError(_, let message), .authenticationFailed(let message):
+    case .invalidUrl:
+      return "Invalid URL"
+    case .invalidResponse:
+      return "Invalid response"
+    case .decodingError(let message):
       return message
+    case .serverError(let statusCode, let message):
+      return "Server error: \(statusCode) - \(message ?? "Unknown error")"
+    case .authenticationFailed(let message):
+      return "Authentication failed: \(message ?? "Unknown error")"
+    case .authRetryNeeded:
+      return "Authentication retry needed"
+    case .maxRetriesExceeded:
+      return "Max retries exceeded"
     default:
-      return "에러 발생"
+      return "Unknown error"
     }
   }
-  
+
 }

@@ -6,7 +6,6 @@
 //
 
 import Combine
-import MapKit
 import SwiftUI
 
 struct MainHomeScreen: View {
@@ -18,6 +17,7 @@ struct MainHomeScreen: View {
   @State private var myPickSort: MyPickSort = .latest
   @State private var filterPickchelin: Bool = false
   @State private var filterMyPick: Bool = false
+  @State private var popularStores: [StoreInfo] = []
 
   enum Category: String, CaseIterable {
     case coffee = "커피"
@@ -39,9 +39,7 @@ struct MainHomeScreen: View {
 
   var body: some View {
     MainHomeView(
-      storeList: storeModel.storeList,
-      popularStores: storeModel.popularStores,
-      banners: storeModel.banners,
+      popularStores: popularStores,
       categories: Category.allCases.map { ($0.rawValue, $0.icon) },
       location: storeModel.location,
       isLoading: storeModel.isLoading,
@@ -53,6 +51,7 @@ struct MainHomeScreen: View {
       onCategorySelected: { category in
         Task {
           await storeModel.filterByCategory(category)
+          popularStores = await storeModel.fetchPopularStores(category: category)
         }
       },
       onLikeToggled: { storeId in
@@ -78,12 +77,12 @@ struct MainHomeScreen: View {
     .toolbar(.hidden, for: .navigationBar)
 
     .task {
-      // 위치 정보 있으면 바로 로드, 없으면 위치 요청
       if let coordinates = locationManager.getCurrentCoordinates() {
         await storeModel.loadInitialData(
           latitude: coordinates.latitude,
           longitude: coordinates.longitude
         )
+        popularStores = await storeModel.fetchPopularStores(category: selectedCategory)
       } else {
         do {
           let locationData = try await locationManager.requestLocation()
@@ -91,17 +90,18 @@ struct MainHomeScreen: View {
             latitude: locationData.latitude,
             longitude: locationData.longitude
           )
+          popularStores = await storeModel.fetchPopularStores(category: selectedCategory)
         } catch {
-          // 위치 정보 없이 기본 좌표로 로드 (문래역 근처로 가정)
           await storeModel.loadInitialData(latitude: 37.517, longitude: 126.886)
+          popularStores = await storeModel.fetchPopularStores(category: selectedCategory)
         }
       }
     }
   }
 
   // 필터/정렬 적용 함수
-  var filteredAndSortedStores: [Store] {
-    var result = storeModel.storeList
+  var filteredAndSortedStores: [StoreInfo] {
+    var result = storeModel.myPickStores
     // 필터
     if filterPickchelin && filterMyPick {
       result = result.filter { $0.isPicchelin && $0.isPick }
@@ -119,7 +119,7 @@ struct MainHomeScreen: View {
       }
     case .distance:
       return result.sorted {
-        ($0.distance ?? .greatestFiniteMagnitude) < ($1.distance ?? .greatestFiniteMagnitude)
+        ($0.geolocation.longitude ?? .greatestFiniteMagnitude) < ($1.geolocation.longitude ?? .greatestFiniteMagnitude)
       }
     case .rating:
       return result.sorted { $0.totalRating > $1.totalRating }
@@ -129,9 +129,8 @@ struct MainHomeScreen: View {
 
 struct MainHomeView: View {
   // 전달받은 데이터
-  let storeList: [Store]
-  let popularStores: [Store]
-  let banners: [BannerInfo]
+  let popularStores: [StoreInfo]
+  // let banners: [BannerInfo]
   let categories: [(name: String, icon: String)]
   let location: String
   let isLoading: Bool
@@ -147,7 +146,7 @@ struct MainHomeView: View {
   @Binding var myPickSort: MyPickSort
   @Binding var filterPickchelin: Bool
   @Binding var filterMyPick: Bool
-  let filteredAndSortedStores: [Store]
+  let filteredAndSortedStores: [StoreInfo]
 
   // 내부 상태
   @State private var selectedCategory: String? = nil
@@ -249,7 +248,8 @@ struct MainHomeView: View {
 
             // 리스트 렌더링 (필터/정렬 적용)
             ForEach(filteredAndSortedStores, id: \.id) { store in
-              StoreListCellView(store: store, onLikeToggled: { onLikeToggled(store.id) }
+              StoreListCellView(
+                store: store, onLikeToggled: { onLikeToggled(store.id) }
               )
               .onTapGesture {
                 onStoreDetailSelected(store.id)
@@ -368,60 +368,9 @@ struct LocationView: View {
   }
 }
 
-struct BannerView: View {
-  let banner: BannerInfo
-
-  var body: some View {
-    ZStack(alignment: .bottomTrailing) {
-      RoundedRectangle(cornerRadius: 12)
-        .fill(
-          LinearGradient(
-            gradient: Gradient(colors: [Color("BannerStart"), Color("BannerEnd")]),
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-          )
-        )
-        .frame(height: 120)
-        .overlay(
-          HStack {
-            VStack(alignment: .leading, spacing: 4) {
-              Text(banner.title)
-                .font(.headline)
-                .fontWeight(.bold)
-                .foregroundColor(.white)
-              Text("픽업하면 0원")
-                .font(.subheadline)
-                .foregroundColor(.white.opacity(0.9))
-            }
-            Spacer()
-            Image(banner.imageUrl)  // 실제 일러스트 이미지
-              .resizable()
-              .frame(width: 60, height: 60)
-          }
-
-        )
-      // 뱃지/진행도
-      HStack(spacing: 8) {
-        Text(banner.badgeText)
-          .font(.caption)
-          .fontWeight(.bold)
-          .foregroundColor(.white)
-          .padding(.horizontal, 8)
-          .padding(.vertical, 4)
-          .background(Color.green)
-          .cornerRadius(12)
-        Text("1/12")
-          .font(.caption)
-          .foregroundColor(.white)
-      }
-      .padding()
-    }
-  }
-}
-
 
 struct PopularStoresListView: View {
-  let stores: [Store]
+  let stores: [StoreInfo]
   let onLikeToggled: (String) -> Void
   let onStoreDetailSelected: (String) -> Void
 
@@ -434,7 +383,7 @@ struct PopularStoresListView: View {
             onLikeToggled: { onLikeToggled(store.id) }
           )
           .onTapGesture {
-                onStoreDetailSelected(store.id)
+            onStoreDetailSelected(store.id)
           }
         }
       }
@@ -442,7 +391,7 @@ struct PopularStoresListView: View {
     }
   }
 
-  private func popularShopItemView(store: Store, onLikeToggled: @escaping () -> Void)
+  private func popularShopItemView(store: StoreInfo, onLikeToggled: @escaping () -> Void)
     -> some View
   {
     VStack(spacing: 0) {
@@ -457,7 +406,7 @@ struct PopularStoresListView: View {
     .frame(width: 240, height: 176)
     .background(
       CachedAsyncImage(
-        url: store.storeImageurls.first ?? "",
+        url: store.storeImageUrls.first ?? "",
         content: { image in
           image
             .resizable()
@@ -496,7 +445,7 @@ struct PopularStoresListView: View {
     }
   }
 
-  private func infoView(store: Store) -> some View {
+  private func infoView(store: StoreInfo) -> some View {
     VStack(alignment: .leading, spacing: 6) {
       HStack(spacing: 6) {
         Text(store.name)
@@ -523,7 +472,7 @@ struct PopularStoresListView: View {
           .padding(.leading, 10)
 
           .foregroundColor(.blackSprout)
-        Text("\(store.distance ?? 0)km")
+        Text("\(store.geolocation.longitude ?? 0)km")
           .font(.Pretendard.body3)
           .foregroundColor(.g75)
         Image("time")
@@ -531,7 +480,7 @@ struct PopularStoresListView: View {
           .frame(width: 16, height: 16)
 
           .foregroundColor(.blackSprout)
-        Text(store.close)
+        Text(store.close ?? "정보 없음")
           .font(.Pretendard.body3)
           .foregroundColor(.g75)
         Image("run")

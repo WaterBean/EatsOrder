@@ -16,12 +16,12 @@ final class ProfileModel: ObservableObject {
     self.service = service
   }
   
-  func myProfile() async -> ProfileResponse {
+  func myProfile() async -> Profile {
     do {
-      let a: ProfileResponse = try await service.request(endpoint: UserEndpoint.myProfile)
-      return a
+      let profile: Profile = try await service.request(endpoint: UserEndpoint.myProfile)
+      return profile
     } catch {
-      return ProfileResponse(user_id: "", email: "", nick: "", profileImage: "", phoneNum: "")
+      return Profile(userId: "", email: "", nick: "", profileImage: "", phoneNum: "")
     }
   }
 }

@@ -14,9 +14,11 @@ struct StoreDetailScreen: View {
   @EnvironmentObject private var model: StoreModel
   @Environment(\.dismiss) private var dismiss
   @State private var storeDetail = StoreDetail(
-    id: "", name: "", imageUrls: [], isPicchelin: false, isPick: false, pickCount: 0, rating: 0,
-    reviewCount: 0, orderCount: 0, address: "", openTime: "", closeTime: "", parking: "",
-    estimatedTime: "", distance: nil, menus: [])
+    storeId: "", category: "", name: "", description: "", hashTags: [], open: "", close: "",
+    address: "", estimatedPickupTime: 0, parkingGuide: "", storeImageUrls: [], isPicchelin: false,
+    isPick: false, pickCount: 0, totalReviewCount: 0, totalOrderCount: 0, totalRating: 0,
+    creator: Creator(userId: "", nick: "", profileImage: ""), geolocation: GeoLocation(
+      longitude: 0, latitude: 0), menuList: [], createdAt: "", updatedAt: "")
 
   var body: some View {
     StoreDetailView(
@@ -43,7 +45,7 @@ struct StoreDetailView: View {
   @State private var isPressedCategory: String? = nil
 
   var categories: [String] {
-    let all = detail.menus.map { $0.category }
+    let all = detail.menuList.map { $0.category }
     return Array(NSOrderedSet(array: all)) as? [String] ?? []
   }
 
@@ -83,7 +85,7 @@ struct StoreDetailView: View {
             // 가게명/픽슐랭/통계
             VStack(alignment: .leading, spacing: 8) {
               HStack(spacing: 8) {
-                Text(detail.name)
+                Text(detail.name ?? "")
                   .font(.Pretendard.title1.weight(.bold))
                   .foregroundColor(.black)
                 if detail.isPicchelin {
@@ -103,10 +105,10 @@ struct StoreDetailView: View {
                     .resizable()
                     .frame(width: 16, height: 16)
                     .foregroundStyle(.brightForsythia)
-                  Text(String(format: "%.1f", detail.rating)).font(.Pretendard.body2)
+                  Text(String(format: "%.1f", detail.totalRating)).font(.Pretendard.body2)
                     .foregroundColor(
                       .g90)
-                  Text("(\(detail.reviewCount))").font(.Pretendard.body2).foregroundColor(.g60)
+                  Text("(\(detail.totalReviewCount))").font(.Pretendard.body2).foregroundColor(.g60)
                   Image("chevron")
                     .resizable()
                     .frame(width: 16, height: 16)
@@ -119,7 +121,7 @@ struct StoreDetailView: View {
                     .resizable()
                     .frame(width: 16, height: 16)
                     .foregroundStyle(.g60)
-                  Text("누적 주문 \(detail.orderCount)회")
+                  Text("누적 주문 \(detail.totalOrderCount)회")
                     .font(.Pretendard.body2).foregroundColor(.g60)
                 }
               }
@@ -136,12 +138,10 @@ struct StoreDetailView: View {
                 Image("run")
                   .resizable()
                   .frame(width: 20, height: 20)
-                Text("예상 소요시간 \(detail.estimatedTime) (")
+                Text("예상 소요시간 \(detail.estimatedPickupTime) (")
                   .font(.Pretendard.caption1)
-                if let distance = detail.distance {
-                  Text(String(format: "%.1fkm", distance))
+                Text(String(format: "%.1fkm", 0.0))
                     .font(.Pretendard.caption1)
-                }
                 Text(")")
                   .font(.Pretendard.caption1)
               }
@@ -199,10 +199,10 @@ struct StoreDetailView: View {
 
           ) {
             ForEach(categories, id: \.self) { category in
-              if !detail.menus.filter({ $0.category == category }).isEmpty {
+              if !detail.menuList.filter({ $0.category == category }).isEmpty {
                 MenuCategorySectionView(
                   category: category,
-                  menus: detail.menus.filter { $0.category == category },
+                  menus: detail.menuList.filter { $0.category == category },
                   pressedCategory: isPressedCategory
                 )
               }
@@ -227,7 +227,7 @@ struct StoreDetailView: View {
           .resizable()
           .frame(width: 20, height: 20)
           .foregroundStyle(.deepSprout)
-        Text(detail.address).font(.Pretendard.body2).foregroundStyle(.g60)
+        Text(detail.address ?? "").font(.Pretendard.body2).foregroundStyle(.g60)
         Spacer()
       }
       HStack {
@@ -238,7 +238,7 @@ struct StoreDetailView: View {
           .resizable()
           .frame(width: 20, height: 20)
           .foregroundStyle(.deepSprout)
-        Text("\(detail.openTime) ~ \(detail.closeTime)")
+        Text("\(detail.open ?? "정보 없음") ~ \(detail.close ?? "정보 없음")")
           .font(.Pretendard.body2).foregroundStyle(.g60)
         Spacer()
       }
@@ -250,7 +250,7 @@ struct StoreDetailView: View {
           .resizable()
           .frame(width: 20, height: 20)
           .foregroundStyle(.deepSprout)
-        Text(detail.parking).font(.Pretendard.body2).foregroundStyle(.g60)
+        Text(detail.parkingGuide ?? "").font(.Pretendard.body2).foregroundStyle(.g60)
         Spacer()
       }
     }
@@ -268,7 +268,7 @@ struct StoreDetailView: View {
 // 메뉴 전체 섹션 리스트 뷰
 struct MenuSectionListView: View {
   let categories: [String]
-  let menus: [StoreDetail.Menu]
+  let menus: [MenuItem]
 
   var body: some View {
     VStack(alignment: .leading, spacing: 0) {
@@ -283,7 +283,7 @@ struct MenuSectionListView: View {
 // 카테고리별 메뉴 섹션 뷰
 struct MenuCategorySectionView: View {
   let category: String
-  let menus: [StoreDetail.Menu]
+  let menus: [MenuItem]
   let pressedCategory: String?
 
   var body: some View {
@@ -314,13 +314,13 @@ struct MenuCategorySectionView: View {
 }
 
 struct MenuCellView: View {
-  let menu: StoreDetail.Menu
+  let menu: MenuItem
   var body: some View {
 
     HStack(alignment: .bottom, spacing: 0) {
       VStack(alignment: .leading, spacing: 8) {
-        if menu.isPopular {
-          Text("인기")
+        ForEach(menu.tags, id: \.self) { tag in
+          Text(tag)
             .font(.Pretendard.caption2.weight(.semibold))
             .foregroundStyle(.blackSprout)
             .padding(.horizontal, 8)
@@ -342,7 +342,7 @@ struct MenuCellView: View {
 
       Spacer()
 
-      if let url = menu.imageUrl {
+      if let url = menu.menuImageUrl {
         CachedAsyncImage(url: url) { image in
           image.resizable().scaledToFill()
 
@@ -425,7 +425,7 @@ struct ImageCarouselView: View {
 
   var body: some View {
     TabView {
-      ForEach(detail.imageUrls, id: \.self) { url in
+      ForEach(detail.storeImageUrls, id: \.self) { url in
         CachedAsyncImage(url: url) { image in
           image
             .resizable()

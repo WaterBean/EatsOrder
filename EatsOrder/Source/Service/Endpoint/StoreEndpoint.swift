@@ -122,7 +122,7 @@ enum StoreEndpoint: EndpointProtocol {
   var body: Encodable? {
     switch self {
     case .storeLike(_, let likeStatus):
-      return StoreLikeRequest(like_status: likeStatus)
+      return RequestDTOs.StoreLike(like_status: likeStatus)
       
     case .storeList, .storeDetail, .searchStores, .popularStores, .popularSearches, .myLikedStores:
       return nil

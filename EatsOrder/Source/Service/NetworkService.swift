@@ -81,7 +81,7 @@ final class NetworkService: NetworkProtocol {
     guard (200...304).contains(httpResponse.statusCode) else {
       var message: String
       do {
-        let errorResponse = try JSONDecoder().decode(MessageResponse.self, from: data)
+        let errorResponse = try JSONDecoder().decode(Message.self, from: data)
         message = errorResponse.message
       } catch {
         message = "에러 디코딩 실패"
@@ -105,6 +105,7 @@ final class NetworkService: NetworkProtocol {
 
     do {
       let decoder = JSONDecoder()
+      decoder.keyDecodingStrategy = .convertFromSnakeCase
       let result = try decoder.decode(T.self, from: data)
       for m in middleware {
         m.didReceive(response: httpResponse, data: data)
@@ -159,7 +160,7 @@ extension NetworkService {
     guard (200...304).contains(httpResponse.statusCode) else {
       var message: String
       do {
-        let errorResponse = try JSONDecoder().decode(MessageResponse.self, from: data)
+        let errorResponse = try JSONDecoder().decode(Message.self, from: data)
         message = errorResponse.message
       } catch {
         message = "에러 디코딩 실패"
@@ -172,7 +173,9 @@ extension NetworkService {
     }
 
     do {
-      return try JSONDecoder().decode(T.self, from: data)
+      let decoder = JSONDecoder()
+      decoder.keyDecodingStrategy = .convertFromSnakeCase
+      return try decoder.decode(T.self, from: data)
     } catch {
 
       for m in middleware {

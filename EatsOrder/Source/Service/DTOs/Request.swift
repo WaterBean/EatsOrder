@@ -7,35 +7,38 @@
 
 import Foundation
 
-struct EmailValidationRequest: Encodable {
-  let email: String
-}
+enum RequestDTOs {
 
-struct JoinRequest: Encodable {
-  let email: String
-  let password: String
-  let nick: String
-  let phoneNum: String
-  let deviceToken: String
-}
+  struct EmailValidation: Encodable {
+    let email: String
+  }
 
-struct LoginRequest: Encodable {
-  let email: String
-  let password: String
-  let deviceToken: String
-}
+  struct Join: Encodable {
+    let email: String
+    let password: String
+    let nick: String
+    let phoneNum: String
+    let deviceToken: String
+  }
 
-struct KakaoLoginRequest: Encodable {
-  let oauthToken: String
-  let deviceToken: String
-}
+  struct Login: Encodable {
+    let email: String
+    let password: String
+    let deviceToken: String
+  }
 
-struct AppleLoginRequest: Encodable {
-  let idToken: String
-  let deviceToken: String
-  let nick: String?
-}
+  struct KakaoLogin: Encodable {
+    let oauthToken: String
+    let deviceToken: String
+  }
 
-struct StoreLikeRequest: Encodable {
-  let like_status: Bool
+  struct AppleLogin: Encodable {
+    let idToken: String
+    let deviceToken: String
+    let nick: String
+  }
+
+  struct StoreLike: Encodable {
+    let like_status: Bool
+  }
 }

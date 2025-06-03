@@ -67,10 +67,10 @@ enum UserEndpoint: EndpointProtocol {
   var body: Encodable? {
     switch self {
     case .validateEmail(let email):
-      return EmailValidationRequest(email: email)
+      return RequestDTOs.EmailValidation(email: email)
       
     case .join(let email, let password, let nick, let phoneNum, let deviceToken):
-      return JoinRequest(
+      return RequestDTOs.Join(
         email: email,
         password: password,
         nick: nick,
@@ -79,23 +79,23 @@ enum UserEndpoint: EndpointProtocol {
       )
       
     case .login(let email, let password, let deviceToken):
-      return LoginRequest(
+      return RequestDTOs.Login(
         email: email,
         password: password,
         deviceToken: deviceToken
       )
       
     case .kakaoLogin(let oauthToken, let deviceToken):
-      return KakaoLoginRequest(
+      return RequestDTOs.KakaoLogin(
         oauthToken: oauthToken,
         deviceToken: deviceToken
       )
       
     case .appleLogin(let idToken, let deviceToken, let nick):
-      return AppleLoginRequest(
+      return RequestDTOs.AppleLogin(
         idToken: idToken,
         deviceToken: deviceToken,
-        nick: nick
+        nick: nick!
       )
       
     case .myProfile:

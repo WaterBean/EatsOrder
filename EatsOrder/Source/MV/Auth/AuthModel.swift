@@ -146,7 +146,7 @@ final class AuthModel: ObservableObject {
   // 에러 처리 공통 메서드
   private func handleError(error: Error, defaultMessage: String) {
     if let networkError = error as? NetworkError {
-      dispatch(.setError(message: networkError.serverMessage ?? defaultMessage))
+      dispatch(.setError(message: networkError.localizedDescription ?? defaultMessage))
     } else {
       dispatch(.setError(message: defaultMessage + ": " + error.localizedDescription))
     }
@@ -186,7 +186,7 @@ final class AuthModel: ObservableObject {
       let refreshEndpoint = AuthEndpoint.refresh(refreshToken: tokenManager.refreshToken)
       
       // rawRequest 사용 (미들웨어를 거치지 않음)
-      let response: TokenResponse = try await service.rawRequest(endpoint: refreshEndpoint)
+      let response: Token = try await service.rawRequest(endpoint: refreshEndpoint)
       
       // 새 토큰 저장
       dispatch(.saveTokens(accessToken: response.accessToken, refreshToken: response.refreshToken))
@@ -224,7 +224,7 @@ final class AuthModel: ObservableObject {
     dispatch(.clearError)
     
     do {
-      let response: MessageResponse = try await service.request(
+      let response: Message = try await service.request(
         endpoint: UserEndpoint.validateEmail(email: email)
       )
       dispatch(.setEmailValidationResult(result: response.message))
@@ -244,7 +244,7 @@ final class AuthModel: ObservableObject {
     dispatch(.setLoginSuccess(success: false))
     
     do {
-      let response: LoginResponse = try await service.request(
+      let response: Login = try await service.request(
         endpoint: UserEndpoint.login(email: email, password: password, deviceToken: deviceToken)
       )
       
@@ -270,7 +270,7 @@ final class AuthModel: ObservableObject {
     dispatch(.setJoinSuccess(success: false))
     
     do {
-      let response: JoinResponse = try await service.rawRequest(
+      let response: Join = try await service.rawRequest(
         endpoint: UserEndpoint.join(
           email: email,
           password: password,
@@ -302,7 +302,7 @@ final class AuthModel: ObservableObject {
     dispatch(.setLoginSuccess(success: false))
     
     do {
-      let response: LoginResponse = try await service.request(
+      let response: Login = try await service.request(
         endpoint: UserEndpoint.kakaoLogin(oauthToken: oauthToken, deviceToken: deviceToken)
       )
       
@@ -328,7 +328,7 @@ final class AuthModel: ObservableObject {
     dispatch(.setLoginSuccess(success: false))
     
     do {
-      let response: LoginResponse = try await service.request(
+      let response: Login = try await service.request(
         endpoint: UserEndpoint.appleLogin(idToken: idToken, deviceToken: deviceToken, nick: nick)
       )
       
