@@ -16,19 +16,20 @@ struct EatsOrderApp: App {
   @StateObject private var authModel: AuthModel
   @StateObject private var profileModel: ProfileModel
   @StateObject private var storeModel: StoreModel
-  @StateObject private var locationManager = LocationManager.shared
+  @StateObject private var locationModel: LocationModel
   init() {
     // KakaoSDK 초기화
     KakaoSDK.initSDK(appKey: Environments.kakaoNativeAppKey)
     
     // 의존성 설정
     let setup = DependencySetup()
-    let (authModel, profileModel, storeModel) = setup.setupDependencies()
+    let (authModel, profileModel, storeModel, locationModel) = setup.setupDependencies()
     
     // StateObject 초기화
     self._authModel = StateObject(wrappedValue: authModel)
     self._profileModel = StateObject(wrappedValue: profileModel)
     self._storeModel = StateObject(wrappedValue: storeModel)
+    self._locationModel = StateObject(wrappedValue: locationModel)
   }
   
   var body: some Scene {
@@ -42,23 +43,23 @@ struct EatsOrderApp: App {
         .environmentObject(authModel)
         .environmentObject(profileModel)
         .environmentObject(storeModel)
-        .environmentObject(locationManager)
+        .environmentObject(locationModel)
     }
   }
 }
 
 // MARK: - 의존성 설정
 final class DependencySetup {
-  @MainActor func setupDependencies() -> (AuthModel, ProfileModel, StoreModel) {
+  @MainActor func setupDependencies() -> (AuthModel, ProfileModel, StoreModel, LocationModel) {
     // 1. 기본 의존성 생성
     let tokenManager = TokenManager()
     let networkService = NetworkService(session: URLSession.shared)
-    let locationManager = LocationManager.shared
+    let locationModel = LocationModel()
     
     // 2. 모델 생성
     let authModel = AuthModel(service: networkService, tokenManager: tokenManager)
     let profileModel = ProfileModel(service: networkService)
-    let storeModel = StoreModel(networkService: networkService, locationManager: locationManager)
+    let storeModel = StoreModel(networkService: networkService)
     
     // 3. 미들웨어 생성 및 설정 (안전한 weak 참조 사용)
     let authMiddleware = AuthMiddleware(
@@ -79,6 +80,6 @@ final class DependencySetup {
     networkService.addMiddleware(authMiddleware)
     networkService.addMiddleware(loggingMiddleware)
 
-    return (authModel, profileModel, storeModel)
+    return (authModel, profileModel, storeModel, locationModel)
   }
 }

@@ -5,128 +5,186 @@
 //  Created by 한수빈 on 5/25/25.
 //
 
-import SwiftUI
+import Combine
 import MapKit
+import SwiftUI
 
-struct LocationSelectView: View {
+struct LocationSelectScreen: View {
+  @EnvironmentObject var locationModel: LocationModel
   @Environment(\.dismiss) private var dismiss
-  @State private var region = MKCoordinateRegion(
-    center: CLLocationCoordinate2D(latitude: 37.5133, longitude: 126.9269),
-    span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
-  )
-  @State private var address: String = "서울 동작구 여의대방로22마길 22"
-  @State private var detailAddress: String = "서울 동작구 신대방동 364-9"
+
+  @State private var isDragging: Bool = false
+  @State private var showNicknameAlert: Bool = false
+  @State private var nicknameInput: String = ""
+  @State private var showNicknameError: Bool = false
 
   var body: some View {
     VStack(spacing: 0) {
-      // 네비게이션 바
-      HStack {
-        Button(action: { dismiss() }) {
-          Image(systemName: "chevron.left")
-            .font(.title3)
-            .foregroundColor(.black)
-        }
-        Spacer()
-        Text("지도에서 위치 확인")
-          .font(.Pretendard.title1)
-          .foregroundColor(.black)
-        Spacer().frame(width: 24)  // 좌우 균형
-      }
-      .padding(.horizontal)
-      .padding(.top, 16)
-      .padding(.bottom, 8)
-
+      headerView()
       ZStack {
-        // 지도
-        Map(coordinateRegion: $region, interactionModes: .all)
-          .frame(height: 400)
-          .clipShape(RoundedRectangle(cornerRadius: 0))
-          .edgesIgnoringSafeArea(.horizontal)
-
-        // 중앙 핀
-        VStack(spacing: 0) {
-          Spacer()
-          Image("pin-face")  // 실제 핀 아이콘 리소스 적용
-            .resizable()
-            .frame(width: 48, height: 48)
-            .shadow(radius: 4)
-          Spacer().frame(height: 180)
-        }
-        // 안내 말풍선
+        locationSelectMap(
+          region: $locationModel.region, currentLocation: locationModel.currentLocation
+        )
+        .gesture(
+          DragGesture()
+            .onChanged { _ in isDragging = true }
+            .onEnded { _ in isDragging = false }
+        )
+        mapCenterMarker()
+          .allowsHitTesting(false)
+        // 내 위치로 이동 버튼 (오른쪽 하단)
         VStack {
-          Spacer().frame(height: 180)
+          Spacer()
           HStack {
             Spacer()
-            Text("바꾼 위치가 주소와 같은지 확인해주세요")
-              .font(.Pretendard.body2)
-              .foregroundColor(.white)
-              .padding(.horizontal, 16)
-              .padding(.vertical, 8)
-              .background(
-                Capsule()
-                  .fill(Color.black)
-              )
-            Spacer()
+            Button(action: moveToCurrentLocation) {
+              Image(systemName: "location.fill")
+                .resizable()
+                .frame(width: 22, height: 22)
+                .foregroundColor(.blue)
+                .padding(16)
+                .background(Color.white)
+                .clipShape(Circle())
+                .shadow(radius: 4)
+            }
+            .padding(.trailing, 20)
+            .padding(.bottom, 20)
           }
-          Spacer()
         }
+        .allowsHitTesting(true)
       }
       .frame(height: 400)
       .background(Color.gray.opacity(0.05))
-      .overlay(
-        // 우측 하단 위치 초기화 버튼
-        VStack {
-          Spacer()
-          HStack {
-            Spacer()
-            Button(action: {
-              // 현위치로 이동 로직
-            }) {
-              Image(systemName: "location.circle.fill")
-                .resizable()
-                .frame(width: 40, height: 40)
-                .foregroundColor(.white)
-                .background(Circle().fill(Color.black.opacity(0.7)))
-            }
-            .padding(.trailing, 16)
-            .padding(.bottom, 16)
-          }
-        }
-      )
-      Spacer()
-      // 하단 시트 스타일
-      VStack(spacing: 12) {
-        Text(address)
-          .font(.Pretendard.title1)
-          .foregroundColor(.black)
-          .frame(maxWidth: .infinity, alignment: .leading)
-        Text(detailAddress)
-          .font(.Pretendard.body1)
-          .foregroundColor(.gray)
-          .frame(maxWidth: .infinity, alignment: .leading)
-        Button(action: {
-          // 주소 등록 액션
-        }) {
-          Text("이 위치로 주소 등록")
-            .font(.Pretendard.body1)
-            .foregroundColor(.white)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
-            .background(Color.deepSprout)
-            .cornerRadius(8)
-        }
+      .onAppear {
+        locationModel.startRegionDebounce()
       }
-      .padding(.horizontal, 20)
-      .padding(.top, 16)
-      .padding(.bottom, 32)
-      .background(
-        RoundedRectangle(cornerRadius: 24)
-          .fill(Color.white)
-          .shadow(color: Color.black.opacity(0.06), radius: 8, x: 0, y: -2)
-      )
+      .onDisappear {
+        locationModel.cancelRegionDebounce()
+      }
+      Spacer()
+      infoView()
     }
     .background(Color.white.ignoresSafeArea())
     .tabBarHidden()
     .navigationBarBackButtonHidden(true)
+  }
+
+  private func headerView() -> some View {
+    HStack {
+      Button(action: { dismiss() }) {
+        Image("chevron")
+          .resizable()
+          .frame(width: 24, height: 24)
+          .foregroundColor(.black)
+      }
+      Text("내 위치 설정하기")
+        .font(.Pretendard.title1)
+        .foregroundColor(.black)
+      Spacer()
+    }
+    .padding(.horizontal)
+    .padding(.top, 16)
+    .padding(.bottom, 8)
+  }
+
+  private func locationSelectMap(region: Binding<MKCoordinateRegion>, currentLocation: GeoLocation?)
+    -> some View
+  {
+    Map(
+      coordinateRegion: region,
+      annotationItems: currentLocation.map { [$0.coordinate] } ?? []
+    ) { coordinate in
+      MapAnnotation(coordinate: coordinate) {
+        ZStack {
+          LocationAccuracyCircle(accuracy: currentLocation?.horizontalAccuracy)
+          Image("location")
+            .resizable()
+            .frame(width: 32, height: 32)
+            .foregroundColor(.blackSprout)
+            .shadow(radius: 4)
+        }
+      }
+    }
+  }
+
+  private func infoView() -> some View {
+    VStack(alignment: .leading, spacing: 4) {
+      Text(locationModel.address)
+        .font(.Pretendard.title1)
+        .foregroundColor(.black)
+      if !locationModel.detail.isEmpty {
+        Text(locationModel.detail)
+          .font(.Pretendard.body2)
+          .foregroundColor(.gray)
+      }
+      Button(action: {
+        showNicknameAlert = true
+      }) {
+        Text("설정하기")
+          .frame(maxWidth: .infinity)
+          .padding()
+          .background(Color.blue)
+          .foregroundColor(.white)
+          .cornerRadius(8)
+      }
+      .padding(.top, 12)
+    }
+    .padding(.horizontal)
+    .padding(.vertical, 20)
+    .background(Color.white)
+    .alert("주소 별명 입력", isPresented: $showNicknameAlert) {
+      TextField("예: 우리집, 회사", text: $nicknameInput)
+      Button("저장") {
+        if nicknameInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+          showNicknameError = true
+        } else if let geo = locationModel.currentLocation {
+          locationModel.saveRecentLocation(
+            nickname: nicknameInput,
+            fullAddress: locationModel.address,
+            geoLocation: geo
+          )
+          dismiss()
+        }
+      }
+      Button("취소", role: .cancel) {}
+    } message: {
+      if showNicknameError {
+        Text("별명을 입력해주세요.")
+      }
+    }
+  }
+
+  private func mapCenterMarker() -> some View {
+    VStack {
+      Spacer()
+      HStack {
+        Spacer()
+        Image("location")
+          .resizable()
+          .frame(width: 32, height: 32)
+          .shadow(radius: 4)
+          .offset(y: -16)
+        Spacer()
+      }
+      Spacer()
+    }
+  }
+
+  private func moveToCurrentLocation() {
+    if let loc = locationModel.currentLocation {
+      locationModel.region.center = loc.coordinate
+    }
+  }
+}
+
+struct LocationAccuracyCircle: View {
+  let accuracy: Double?
+  var body: some View {
+    if let accuracy {
+      let circleSize = max(40, min(accuracy, 200))
+      Circle()
+        .fill(Color.blue.opacity(0.15))
+        .frame(width: circleSize, height: circleSize)
+    }
   }
 }

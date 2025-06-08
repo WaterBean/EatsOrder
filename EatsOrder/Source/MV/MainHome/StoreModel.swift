@@ -17,9 +17,7 @@ enum StoreAction {
 
   // 데이터 액션
   case setMyPickStores(stores: [StoreInfo])
-  case setLocation(location: String)
   case setSearchText(text: String)
-  case setCategory(category: String?)
   case setNextCursor(cursor: String)
 
   // 상태 변경 액션
@@ -30,24 +28,18 @@ enum StoreAction {
 @MainActor
 final class StoreModel: ObservableObject {
   // 상태 및 데이터
-  @Published private(set) var category: String? = nil
-  @Published private(set) var location: String = "문래역, 영등포구"
   @Published private(set) var searchText: String = ""
   @Published private(set) var currentPage: Int = 0
   @Published private(set) var nextCursor: String = ""
   @Published private(set) var isLoading: Bool = false
   @Published private(set) var error: String? = nil
-  @Published var myPickSort: MyPickSort = .latest
-  @Published private(set) var myPickStores: [StoreInfo] = []
 
   // 서비스 의존성
   private let networkService: NetworkProtocol
-  private(set) var locationManager: LocationManager
 
   // 초기화
-  init(networkService: NetworkProtocol, locationManager: LocationManager) {
+  init(networkService: NetworkProtocol) {
     self.networkService = networkService
-    self.locationManager = locationManager
   }
 
   // MARK: - 액션 디스패처 - 모든 상태 변경은 이 메서드를 통과
@@ -62,78 +54,26 @@ final class StoreModel: ObservableObject {
       self.error = message
 
     // 데이터 액션 처리
-    case .setMyPickStores(let stores):
-      self.myPickStores = stores
-
-    case .setLocation(let location):
-      self.location = location
+    case .setMyPickStores:
+      break
 
     case .setSearchText(let text):
       self.searchText = text
-
-    case .setCategory(let category):
-      self.category = category
 
     case .setNextCursor(let cursor):
       self.nextCursor = cursor
 
     // 가게 좋아요 토글
-    case .toggleStoreLike(let storeId):
-      if let index = myPickStores.firstIndex(where: { $0.storeId == storeId }) {
-        var updatedStore = myPickStores[index]
-        updatedStore.isPick.toggle()
-
-        // 해당 인덱스의 가게만 업데이트
-        var updatedStores = myPickStores
-        updatedStores[index] = updatedStore
-        self.myPickStores = updatedStores
-
-        // API 호출은 별도 함수에서 처리
-        Task {
-          await toggleStoreLikeAPI(storeId: storeId, isLiked: updatedStore.isPick)
-        }
-      }
+    case .toggleStoreLike:
+      break
     }
   }
 
   // MARK: - 공개 메서드
 
-  // 초기 데이터 로드
-  func loadInitialData(latitude: Double, longitude: Double) async {
-    dispatch(.setLoading(isLoading: true))
-    dispatch(.setError(message: nil))
-
-    // 병렬로 여러 API 호출
-    async let storesTask = loadNearbyStores(latitude: latitude, longitude: longitude)
-    async let popularTask = loadPopularStores()
-
-    // 모든 작업이 완료될 때까지 대기
-    _ = await [storesTask, popularTask]
-
-    dispatch(.setLoading(isLoading: false))
-  }
-
-  // 위치 정보 업데이트
-  func updateLocation() async {
-    do {
-      let locationData = try await locationManager.requestLocation()
-
-      // 주소와 위경도 업데이트
-      dispatch(.setLocation(location: locationData.address ?? "위치 불명"))
-
-      // 새 위치로 가게 정보 다시 로드
-      if let coordinates = locationManager.getCurrentCoordinates() {
-        await loadNearbyStores(latitude: coordinates.latitude, longitude: coordinates.longitude)
-      }
-    } catch {
-      handleError(error: error, defaultMessage: "위치 정보를 가져오는데 실패했습니다")
-    }
-  }
-
   // 검색어 설정
   func updateSearchText(_ text: String) {
     dispatch(.setSearchText(text: text))
-
     // 필요 시 검색 로직 구현
     if !text.isEmpty && text.count > 2 {
       Task {
@@ -141,87 +81,69 @@ final class StoreModel: ObservableObject {
       }
     }
   }
-
-  // 카테고리 필터링
-  func filterByCategory(_ category: String?) async {
-    dispatch(.setCategory(category: category))
-    dispatch(.setLoading(isLoading: true))
-
+  
+  func fetchPopularSearches() async -> [String] {
     do {
-      // 카테고리와 위치 정보로 API 호출
-      if let coordinates = locationManager.getCurrentCoordinates() {
-        let response: StoreList = try await networkService.request(
-          endpoint: StoreEndpoint.storeList(
-            category: category,
-            longitude: Float(coordinates.longitude),
-            latitude: Float(coordinates.latitude),
-            next: nil,
-            limit: 10,
-            orderBy: "distance"
-          )
-        )
-
-        dispatch(.setMyPickStores(stores: response.data))
-        dispatch(.setNextCursor(cursor: response.nextCursor))
-      }
+      let response: PopularSearches = try await networkService.request(
+        endpoint: StoreEndpoint.popularSearches
+      )
+      return response.data
     } catch {
-      handleError(error: error, defaultMessage: "카테고리 필터링 실패")
+      handleError(error: error, defaultMessage: "인기 검색어 로드 실패")
+      return []
     }
-
-    dispatch(.setLoading(isLoading: false))
   }
 
-  // 더 많은 가게 로드 (페이지네이션)
-  func loadMoreStores() async {
-    // 로딩 중이거나 더 이상 데이터가 없으면 중단
-    guard !isLoading, !nextCursor.isEmpty, nextCursor != "0" else { return }
-
-    dispatch(.setLoading(isLoading: true))
-
-    do {
-      if let coordinates = locationManager.getCurrentCoordinates() {
-        let response: StoreList = try await networkService.request(
-          endpoint: StoreEndpoint.storeList(
-            category: category,
-            longitude: Float(coordinates.longitude),
-            latitude: Float(coordinates.latitude),
-            next: nextCursor,
-            limit: 10,
-            orderBy: "distance"
-          )
-        )
-
-        // 기존 리스트에 새 데이터 추가
-        let updatedList = myPickStores + response.data
-        dispatch(.setMyPickStores(stores: updatedList))
-        dispatch(.setNextCursor(cursor: response.nextCursor))
-      }
-    } catch {
-      handleError(error: error, defaultMessage: "추가 가게 로드 실패")
-    }
-
-    dispatch(.setLoading(isLoading: false))
-  }
-
-  // 내 픽 가게 데이터 로드 및 정렬 적용
-  func loadMyPickStores() async {
-    dispatch(.setLoading(isLoading: true))
+  // 내 주변 가게 데이터 fetch (상태는 View에서만 소유)
+  func fetchNearbyStores(
+    latitude: Double, longitude: Double, maxDistance: Double, next: String = "", limit: Int = 5,
+    orderBy: String
+  ) async -> (stores: [StoreInfo], nextCursor: String) {
     do {
       let response: StoreList = try await networkService.request(
-        endpoint: StoreEndpoint.myLikedStores(category: nil, next: nil, limit: "20")
+        endpoint: StoreEndpoint.storeList(
+          category: nil,
+          longitude: longitude,
+          latitude: latitude,
+          maxDistance: maxDistance,
+          next: next.isEmpty ? nil : next,
+          limit: limit,
+          orderBy: orderBy
+        )
       )
-      let sorted = sortMyPickStores(response.data, by: myPickSort)
-      myPickStores = sorted
+      let nextCursor = response.nextCursor
+      return (response.data, nextCursor)
     } catch {
-      handleError(error: error, defaultMessage: "내 픽 가게 불러오기 실패")
+      handleError(error: error, defaultMessage: "주변 가게 로드 실패")
+      return ([], "0")
+    }
+  }
+
+  // 가게 검색
+  private func searchStores(name: String) async {
+    dispatch(.setLoading(isLoading: true))
+    do {
+      let response: StoreSearch = try await networkService.request(
+        endpoint: StoreEndpoint.searchStores(name: name)
+      )
+      // 검색 결과는 View에서만 사용
+    } catch {
+      handleError(error: error, defaultMessage: "가게 검색 실패")
     }
     dispatch(.setLoading(isLoading: false))
   }
 
-  // 정렬 변경 시 정렬만 다시 적용
-  func updateMyPickSort(_ sort: MyPickSort) {
-    myPickSort = sort
-    myPickStores = sortMyPickStores(myPickStores, by: sort)
+  // 인기 가게 로드
+  func fetchPopularStores(category: String?) async -> [StoreInfo] {
+    do {
+      let response: PopularStores = try await networkService.request(
+        endpoint: StoreEndpoint.popularStores(category: nil)
+      )
+      return response.data
+    } catch {
+      handleError(error: error, defaultMessage: "인기 가게 로드 실패")
+      return []
+    }
   }
 
   func fetchDetail(storeId: String) async -> StoreDetail {
@@ -231,77 +153,8 @@ final class StoreModel: ObservableObject {
       )
       return response
     } catch {
-      print(error.localizedDescription, "여기가 문제다")
       handleError(error: error, defaultMessage: "가게 상세 정보 로드 실패")
-    }
-    return StoreDetail(
-      storeId: "", category: "", name: "", description: "", hashTags: [], open: "", close: "",
-      address: "", estimatedPickupTime: 0, parkingGuide: "", storeImageUrls: [], isPicchelin: false,
-      isPick: false, pickCount: 0, totalReviewCount: 0, totalOrderCount: 0, totalRating: 0,
-      creator: Creator(userId: "", nick: "", profileImage: ""),
-      geolocation: GeoLocation(
-        longitude: 0, latitude: 0), menuList: [], createdAt: "", updatedAt: "")
-  }
-
-  // MARK: - 내부 메서드
-
-  // 주변 가게 로드
-  private func loadNearbyStores(latitude: Double, longitude: Double) async {
-    do {
-      let response: StoreList = try await networkService.request(
-        endpoint: StoreEndpoint.storeList(
-          category: category,
-          longitude: Float(longitude),
-          latitude: Float(latitude),
-          next: nil,
-          limit: 10,
-          orderBy: "distance"
-        )
-      )
-
-      dispatch(.setMyPickStores(stores: response.data))
-    } catch {
-      handleError(error: error, defaultMessage: "주변 가게 로드 실패")
-    }
-  }
-
-  // 가게 검색
-  private func searchStores(name: String) async {
-    dispatch(.setLoading(isLoading: true))
-
-    do {
-      let response: StoreSearch = try await networkService.request(
-        endpoint: StoreEndpoint.searchStores(name: name)
-      )
-
-      dispatch(.setMyPickStores(stores: response.data))
-    } catch {
-      handleError(error: error, defaultMessage: "가게 검색 실패")
-    }
-
-    dispatch(.setLoading(isLoading: false))
-  }
-
-  // 좋아요 API 호출
-  private func toggleStoreLikeAPI(storeId: String, isLiked: Bool) async {
-    do {
-      let _: StoreLike = try await networkService.request(
-        endpoint: StoreEndpoint.storeLike(storeId: storeId, likeStatus: isLiked)
-      )
-      // 성공 시 특별한 처리 필요 없음 (이미 UI는 즉시 반영됨)
-    } catch {
-      // API 실패 시 UI 롤백
-      handleError(error: error, defaultMessage: "좋아요 처리 실패")
-
-      // UI 롤백 - 다시 원래 상태로 변경
-      if let index = myPickStores.firstIndex(where: { $0.storeId == storeId }) {
-        var updatedStore = myPickStores[index]
-        updatedStore.isPick.toggle()
-
-        var updatedStores = myPickStores
-        updatedStores[index] = updatedStore
-        dispatch(.setMyPickStores(stores: updatedStores))
-      }
+      return StoreDetail.empty
     }
   }
 
@@ -313,40 +166,5 @@ final class StoreModel: ObservableObject {
       dispatch(.setError(message: defaultMessage))
     }
     print("\(defaultMessage): \(error.localizedDescription)")
-  }
-
-  // 정렬 함수 추가
-  private func sortMyPickStores(_ stores: [StoreInfo], by sort: MyPickSort) -> [StoreInfo] {
-    switch sort {
-    case .latest:
-      // createdAt이 String이므로 Date 변환 필요
-      return stores.sorted {
-        ($0.createdAt.toDate() ?? Date.distantPast) > ($1.createdAt.toDate() ?? Date.distantPast)
-      }
-    case .distance:
-      return stores.sorted {
-        ($0.geolocation.longitude ?? .greatestFiniteMagnitude) < ($1.geolocation.longitude ?? .greatestFiniteMagnitude)
-      }
-    case .rating:
-      return stores.sorted { $0.totalRating > $1.totalRating }
-    }
-  }
-
-  // 인기 가게 로드
-  private func loadPopularStores() async {
-    // 인기 가게 로드 관련 코드 제거
-  }
-
-  // 인기 가게 로드
-  func fetchPopularStores(category: String?) async -> [StoreInfo] {
-    do {
-      let response: PopularStores = try await networkService.request(
-        endpoint: StoreEndpoint.popularStores(category: category)
-      )
-      return response.data
-    } catch {
-      handleError(error: error, defaultMessage: "인기 가게 로드 실패")
-      return []
-    }
   }
 }

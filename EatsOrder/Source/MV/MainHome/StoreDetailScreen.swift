@@ -335,6 +335,7 @@ struct MenuCellView: View {
           .font(.Pretendard.caption1)
           .foregroundColor(.g60)
           .lineLimit(2)
+          .frame(height: 40)
         Text("\(menu.price)원")
           .font(.Pretendard.body1.weight(.bold))
           .foregroundColor(.black)
@@ -371,12 +372,6 @@ struct MenuCellView: View {
   }
 }
 
-private struct OffsetKey: PreferenceKey {
-  static var defaultValue: CGFloat = 0
-  static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-    value = nextValue()
-  }
-}
 
 struct MenuCategoryStickyHeader: View {
   let categories: [String]

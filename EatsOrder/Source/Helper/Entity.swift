@@ -9,7 +9,6 @@ import Foundation
 
 typealias Entity = Codable & Identifiable & Equatable
 
-
 // 여러 응답에서 공통으로 사용되는 가게 정보 모델
 struct StoreInfo: Entity {
   let storeId: String
@@ -29,19 +28,7 @@ struct StoreInfo: Entity {
   let createdAt: String
   let updatedAt: String
 
-  var id: String {
-    storeId
-  }
-}
-
-// 위치 정보 모델
-struct GeoLocation: Entity {
-  let longitude: Double
-  let latitude: Double
-
-  var id: String {
-    "\(longitude)-\(latitude)"
-  }
+  var id: String { storeId }
 }
 
 // 유저 정보 모델
@@ -50,9 +37,7 @@ struct Creator: Entity {
   let nick: String
   let profileImage: String?
 
-  var id: String {
-    userId
-  }
+  var id: String { userId }
 }
 
 // MARK: - 응답 DTO
@@ -82,9 +67,8 @@ struct StoreDetail: Entity {
   let createdAt: String
   let updatedAt: String
 
-  var id: String {
-    storeId
-  }
+  var id: String { storeId }
+  static var empty: StoreDetail { return StoreDetail(storeId: "", category: "", name: "", description: "", hashTags: [], open: "", close: "", address: "", estimatedPickupTime: 0, parkingGuide: "", storeImageUrls: [], isPicchelin: false, isPick: false, pickCount: 0, totalReviewCount: 0, totalOrderCount: 0, totalRating: 0, creator: Creator(userId: "", nick: "", profileImage: ""), geolocation: GeoLocation(longitude: 0, latitude: 0), menuList: [], createdAt: "", updatedAt: "") }
 }
 
 struct MenuItem: Entity {
@@ -101,8 +85,6 @@ struct MenuItem: Entity {
   let createdAt: String
   let updatedAt: String
 
-  var id: String {
-    menuId
-  }
+  var id: String { menuId }
 }
 

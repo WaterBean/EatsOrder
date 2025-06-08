@@ -126,7 +126,7 @@ struct StoreListCellView: View {
           .resizable()
           .frame(width: 20, height: 20)
           .foregroundColor(.blackSprout)
-        Text(String(format: "%.1fkm", store.geolocation.longitude ?? 0))
+        Text(String(format: "%.1fkm", store.geolocation.longitude))
           .font(.Pretendard.body2)
           .foregroundColor(.g60)
       }
@@ -135,7 +135,7 @@ struct StoreListCellView: View {
           .resizable()
           .frame(width: 20, height: 20)
           .foregroundColor(.blackSprout)
-        Text(store.close ?? "정보 없음  ")
+        Text(store.close)
           .font(.Pretendard.body2)
           .foregroundColor(.g60)
       }

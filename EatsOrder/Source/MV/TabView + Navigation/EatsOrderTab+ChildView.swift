@@ -37,7 +37,7 @@ extension HomeRoute {
     case .main:
       MainHomeScreen()
     case .locationSelect:
-      LocationSelectView()
+      LocationSelectScreen()
     case .storeDetail(let storeId):
       StoreDetailScreen(storeId: storeId)
     }
@@ -75,6 +75,7 @@ struct HomeNavigationStack: View {
   var body: some View {
     NavigationStack(path: $router.homePath) {
       MainHomeScreen()
+        .background(.brightSprout)
         .onNavigate { navType in
           switch navType {
           case .push(let route):

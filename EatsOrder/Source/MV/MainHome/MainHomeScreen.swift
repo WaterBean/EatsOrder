@@ -5,27 +5,40 @@
 //  Created by 한수빈 on 5/21/25.
 //
 
-import Combine
 import SwiftUI
 
 struct MainHomeScreen: View {
   @EnvironmentObject var storeModel: StoreModel
-  @EnvironmentObject var locationManager: LocationManager
+  @EnvironmentObject var locationModel: LocationModel
   @Environment(\.navigate) private var navigate
   @Environment(\.isTabBarHidden) private var isTabBarHidden
+
+  // 상태: Screen에서만 소유
   @State private var selectedCategory: String? = nil
-  @State private var myPickSort: MyPickSort = .latest
-  @State private var filterPickchelin: Bool = false
+  @State private var nearbySort: NearbySort = .distance
+  @State private var filterPicchelin: Bool = false
   @State private var filterMyPick: Bool = false
   @State private var popularStores: [StoreInfo] = []
+  @State private var filteredPopularStores: [StoreInfo] = []
+  @State private var nearbyStores: [StoreInfo] = []
+  @State private var nextCursor: String = ""
+  @State private var isLoadingMore: Bool = false
+  @State private var isEndReached: Bool = false
+  @State private var isInitialLoading: Bool = false
+  @State private var errorMessage: String? = nil
+  @State private var paginationTrigger: Bool = false
+  @State private var popularSearches: [String] = []
+  @State private var currentSearchIndex = 0
+  @State private var timer: Timer? = nil
+  @State private var didLoad = false
 
+  // 카테고리 정의
   enum Category: String, CaseIterable {
     case coffee = "커피"
     case fastfood = "패스트푸드"
     case dessert = "디저트"
     case bakery = "베이커리"
     case more = "더보기"
-
     var icon: String {
       switch self {
       case .coffee: return "coffee"
@@ -38,199 +51,90 @@ struct MainHomeScreen: View {
   }
 
   var body: some View {
-    MainHomeView(
-      popularStores: popularStores,
-      categories: Category.allCases.map { ($0.rawValue, $0.icon) },
-      location: storeModel.location,
-      isLoading: storeModel.isLoading,
-      errorMessage: storeModel.error,
-      searchText: storeModel.searchText,
-      onSearchTextChanged: { text in
-        storeModel.dispatch(.setSearchText(text: text))
-      },
-      onCategorySelected: { category in
-        Task {
-          await storeModel.filterByCategory(category)
-          popularStores = await storeModel.fetchPopularStores(category: category)
-        }
-      },
-      onLikeToggled: { storeId in
-        storeModel.dispatch(.toggleStoreLike(storeId: storeId))
-      },
-      onLoadMore: {
-        Task {
-          await storeModel.loadMoreStores()
-        }
-      },
-      onLocationSelected: {
-        navigate(.push(HomeRoute.locationSelect))
-      },
-      onStoreDetailSelected: { storeId in
-        navigate(.push(HomeRoute.storeDetail(storeId: storeId)))
-      },
-      myPickSort: $myPickSort,
-      filterPickchelin: $filterPickchelin,
-      filterMyPick: $filterMyPick,
-      filteredAndSortedStores: filteredAndSortedStores
-    )
-    .background(.brightSprout)
-    .toolbar(.hidden, for: .navigationBar)
-
-    .task {
-      if let coordinates = locationManager.getCurrentCoordinates() {
-        await storeModel.loadInitialData(
-          latitude: coordinates.latitude,
-          longitude: coordinates.longitude
-        )
-        popularStores = await storeModel.fetchPopularStores(category: selectedCategory)
-      } else {
-        do {
-          let locationData = try await locationManager.requestLocation()
-          await storeModel.loadInitialData(
-            latitude: locationData.latitude,
-            longitude: locationData.longitude
-          )
-          popularStores = await storeModel.fetchPopularStores(category: selectedCategory)
-        } catch {
-          await storeModel.loadInitialData(latitude: 37.517, longitude: 126.886)
-          popularStores = await storeModel.fetchPopularStores(category: selectedCategory)
-        }
-      }
-    }
-  }
-
-  // 필터/정렬 적용 함수
-  var filteredAndSortedStores: [StoreInfo] {
-    var result = storeModel.myPickStores
-    // 필터
-    if filterPickchelin && filterMyPick {
-      result = result.filter { $0.isPicchelin && $0.isPick }
-    } else if filterPickchelin {
-      result = result.filter { $0.isPicchelin }
-    } else if filterMyPick {
-      result = result.filter { $0.isPick }
-    }
-    // 둘 다 해제면 전체
-    // 정렬
-    switch myPickSort {
-    case .latest:
-      return result.sorted {
-        ($0.createdAt.toDate() ?? Date.distantPast) > ($1.createdAt.toDate() ?? Date.distantPast)
-      }
-    case .distance:
-      return result.sorted {
-        ($0.geolocation.longitude ?? .greatestFiniteMagnitude) < ($1.geolocation.longitude ?? .greatestFiniteMagnitude)
-      }
-    case .rating:
-      return result.sorted { $0.totalRating > $1.totalRating }
-    }
-  }
-}
-
-struct MainHomeView: View {
-  // 전달받은 데이터
-  let popularStores: [StoreInfo]
-  // let banners: [BannerInfo]
-  let categories: [(name: String, icon: String)]
-  let location: String
-  let isLoading: Bool
-  let errorMessage: String?
-  let searchText: String
-  let onSearchTextChanged: (String) -> Void
-  let onCategorySelected: (String?) -> Void
-  let onLikeToggled: (String) -> Void
-  let onLoadMore: () -> Void
-  let onLocationSelected: () -> Void
-  let onStoreDetailSelected: (String) -> Void
-  // 상태를 Binding으로 전달
-  @Binding var myPickSort: MyPickSort
-  @Binding var filterPickchelin: Bool
-  @Binding var filterMyPick: Bool
-  let filteredAndSortedStores: [StoreInfo]
-
-  // 내부 상태
-  @State private var selectedCategory: String? = nil
-  @State private var searchFocused: Bool = false
-
-  var body: some View {
     ZStack {
-      // 메인 콘텐츠
       ScrollView {
         VStack(spacing: 0) {
           LocationView(
-            location: location,
-            onLocationSelected: onLocationSelected
+            location: locationModel.recentLocation.nickname,
+            onLocationSelected: { navigate(.push(HomeRoute.locationSelect)) }
           )
           SearchBarView(
-            searchText: searchText,
-            onSearchTextChanged: onSearchTextChanged
+            searchText: storeModel.searchText,
+            onSearchTextChanged: { text in
+              storeModel.dispatch(.setSearchText(text: text))
+            }
           )
-          popularSearchTermsView()
+          popularSearchTermsView(popularSearches: popularSearches)
           VStack(spacing: 0) {
-            // 카테고리 선택 영역
             categorySelectView(
-              categories: categories,
-              selectedCategory: $selectedCategory,
+              categories: Category.allCases.map { ($0.rawValue, $0.icon) },
+              selectedCategory: selectedCategory,
               onCategorySelected: { category in
                 if selectedCategory == category {
                   selectedCategory = nil
-                  onCategorySelected(nil)
+                  filteredPopularStores = popularStores
                 } else {
                   selectedCategory = category
-                  onCategorySelected(category)
+                  filteredPopularStores = popularStores.filter { $0.category == category }
                 }
               }
             )
-
-            // 실시간 인기 맛집 섹션
             SectionHeaderView(title: "실시간 인기 맛집")
+            Group {
+              if selectedCategory != nil, filteredPopularStores.isEmpty {
+                VStack {
+                  Spacer()
+                  Text("해당하는 가게가 없습니다")
+                    .font(.Pretendard.body1)
+                    .foregroundStyle(.g60)
+                  Spacer()
+                }
+                .frame(minHeight: 196)
+              } else {
+                PopularStoresListView(
+                  stores: filteredPopularStores.isEmpty && selectedCategory == nil
+                    ? popularStores : filteredPopularStores,
+                  onLikeToggled: { storeId in
+                    storeModel.dispatch(.toggleStoreLike(storeId: storeId))
+                  },
+                  onStoreDetailSelected: { storeId in
+                    navigate(.push(HomeRoute.storeDetail(storeId: storeId)))
+                  }
+                )
+              }
+            }
 
-            // 인기 맛집 목록 (가로 스크롤)
-            PopularStoresListView(
-              stores: popularStores,
-              onLikeToggled: onLikeToggled,
-              onStoreDetailSelected: onStoreDetailSelected
-            )
-
-            // 배너 영역
-            // BannerView(banner: banners.first ?? BannerInfo(id: "", imageUrl: "", title: "", badgeText: ""))
-            //     .padding(.horizontal)
-
-            // 내 픽 가게 섹션
             SectionHeaderView(
-              title: "내가 픽한 가게",
+              title: "내 주변 가게",
               trailing:
                 HStack(spacing: 8) {
-                  ForEach(MyPickSort.allCases, id: \.self) { sort in
-                    Button(action: { myPickSort = sort }) {
+                  ForEach(NearbySort.allCases, id: \.self) { sort in
+                    Button(action: { nearbySort = sort }) {
                       Text(sort.title)
                         .font(.caption)
-                        .foregroundColor(myPickSort == sort ? .deepSprout : .gray)
+                        .foregroundColor(nearbySort == sort ? .deepSprout : .gray)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
                         .background(
-                          myPickSort == sort ? Color.brightSprout.opacity(0.2) : Color.clear
+                          nearbySort == sort ? Color.brightSprout.opacity(0.2) : Color.clear
                         )
                         .cornerRadius(12)
                     }
                   }
                 }
             )
-
-            // 필터 토글 버튼 그룹 (체크박스)
             HStack(spacing: 12) {
-              Toggle(isOn: $filterPickchelin) {
+              Toggle(isOn: $filterPicchelin) {
                 HStack(spacing: 4) {
-                  Image(systemName: filterPickchelin ? "checkmark.square.fill" : "square")
-                    .foregroundColor(filterPickchelin ? .deepSprout : .g60)
+                  Image(systemName: filterPicchelin ? "checkmark.square.fill" : "square")
+                    .foregroundColor(filterPicchelin ? .deepSprout : .g60)
                   Text("픽슐랭")
                     .font(.Pretendard.body3.weight(.medium))
-                    .foregroundColor(filterPickchelin ? .deepSprout : .g60)
+                    .foregroundColor(filterPicchelin ? .deepSprout : .g60)
                 }
               }
               .toggleStyle(.button)
               .buttonStyle(.plain)
-
               Toggle(isOn: $filterMyPick) {
                 HStack(spacing: 4) {
                   Image(systemName: filterMyPick ? "checkmark.square.fill" : "square")
@@ -245,66 +149,166 @@ struct MainHomeView: View {
               Spacer()
             }
             .padding(.horizontal)
-
-            // 리스트 렌더링 (필터/정렬 적용)
-            ForEach(filteredAndSortedStores, id: \.id) { store in
-              StoreListCellView(
-                store: store, onLikeToggled: { onLikeToggled(store.id) }
-              )
-              .onTapGesture {
-                onStoreDetailSelected(store.id)
-              }
+            storeListSection()
+            GeometryReader { geo in
+              Color.clear
+                .preference(key: ScrollOffsetPreferenceKey.self, value: geo.frame(in: .global).maxY)
             }
+            .frame(height: 0)
           }
           .background(.g0)
           .clipShape(RoundedRectangle(cornerRadius: 20))
-          .padding(.bottom, 80)  // 탭바 영역 고려
+          .padding(.bottom, 80)
         }
-        .background(.brightSprout)
         .ignoresSafeArea(.all)
       }
-      // 로딩 인디케이터
-      if isLoading {
-        ProgressView()
-          .progressViewStyle(CircularProgressViewStyle())
-          .scaleEffect(1.5)
-          .frame(maxWidth: .infinity, maxHeight: .infinity)
-          .background(Color.black.opacity(0.2))
+      .onPreferenceChange(ScrollOffsetPreferenceKey.self) { maxY in
+        print("onPreferenceChange called, maxY: \(maxY)")
+        // 하단 근처(200pt 이내)에서만 트리거
+        if maxY < screenHeight + 400, !isLoadingMore, !isEndReached, !nearbyStores.isEmpty {
+          Task { await loadMoreNearbyStores() }
+        }
       }
+    }
 
+    .task {
+      guard !didLoad else { return }
+      didLoad = true
+      isInitialLoading = true
+      locationModel.startUpdatingLocation()
+      popularStores = await storeModel.fetchPopularStores(category: nil)
+      filteredPopularStores = popularStores
+      popularSearches = await storeModel.fetchPopularSearches()
+      await reloadNearbyStores()
+      isInitialLoading = false
+    }
+    .onChange(of: locationModel.recentLocation) { _ in
+      Task { await reloadNearbyStores() }
     }
   }
 
-  private func popularSearchTermsView() -> some View {
+  // 필터/정렬 적용 함수
+  var filteredAndSortedNearbyStores: [StoreInfo] {
+    var result = nearbyStores
+    if filterPicchelin && filterMyPick {
+      result = result.filter { $0.isPicchelin && $0.isPick }
+    } else if filterPicchelin {
+      result = result.filter { $0.isPicchelin }
+    } else if filterMyPick {
+      result = result.filter { $0.isPick }
+    }
+    switch nearbySort {
+    case .orders:
+      return result.sorted { $0.totalOrderCount > $1.totalOrderCount }
+    case .reviews:
+      return result.sorted { $0.totalReviewCount > $1.totalReviewCount }
+    case .distance:
+      return result.sorted { $0.geolocation.longitude < $1.geolocation.longitude }
+    }
+  }
 
+  // 내 주변 가게 페이지네이션 및 초기화 함수
+  func reloadNearbyStores() async {
+    isLoadingMore = true
+    isEndReached = false
+    nextCursor = ""
+    nearbyStores = []
+    errorMessage = nil
+    let (stores, cursor) = await storeModel.fetchNearbyStores(
+      latitude: locationModel.recentLocation.geoLocation.coordinate.latitude,
+      longitude: locationModel.recentLocation.geoLocation.coordinate.longitude,
+      maxDistance: 3000,
+      next: "",
+      limit: 10,
+      orderBy: "distance"
+    )
+    nearbyStores = stores
+    nextCursor = cursor
+    isEndReached = (cursor == "0")
+    isLoadingMore = false
+  }
+
+  func loadMoreNearbyStores() async {
+    guard !isLoadingMore, !isEndReached else { return }
+    isLoadingMore = true
+    let (stores, cursor) = await storeModel.fetchNearbyStores(
+      latitude: locationModel.recentLocation.geoLocation.coordinate.latitude,
+      longitude: locationModel.recentLocation.geoLocation.coordinate.longitude,
+      maxDistance: 3000,
+      next: nextCursor ?? "",
+      limit: 10,
+      orderBy: "distance"
+    )
+    // 중복 id 제거 후 append
+    let newStores = stores.filter { new in !nearbyStores.contains(where: { $0.id == new.id }) }
+    nearbyStores.append(contentsOf: newStores)
+    nextCursor = cursor
+    isEndReached = (cursor == "0")
+    isLoadingMore = false
+  }
+
+  private func popularSearchTermsView(popularSearches: [String]) -> some View {
     HStack(spacing: 8) {
       Image("ai")
         .resizable()
         .frame(width: 16, height: 16)
         .foregroundStyle(.deepSprout)
-
       Text("인기검색어")
         .font(.Pretendard.caption1)
         .foregroundStyle(.deepSprout)
-
-      Text("1 스타벅스")
-        .font(.Pretendard.caption1)
-        .foregroundStyle(.blackSprout)
+      Text(
+        popularSearches.isEmpty
+          ? "" : "\(currentSearchIndex + 1)  \(popularSearches[currentSearchIndex])"
+      )
+      .font(.Pretendard.caption1)
+      .foregroundStyle(.blackSprout)
+      .animation(.easeInOut, value: currentSearchIndex)
       Spacer()
     }
     .padding(.horizontal, 20)
     .padding(.bottom, 12)
+    .onAppear {
+      if !popularSearches.isEmpty {
+        startPopularSearchTimer()
+      }
+    }
+    .onDisappear {
+      stopPopularSearchTimer()
+    }
+    .onChange(of: popularSearches) { newValue in
+      if !newValue.isEmpty {
+        currentSearchIndex = 0
+        startPopularSearchTimer()
+      } else {
+        stopPopularSearchTimer()
+      }
+    }
+  }
 
+  private func startPopularSearchTimer() {
+    timer?.invalidate()
+    timer = Timer.scheduledTimer(withTimeInterval: 4.0, repeats: true) { _ in
+      withAnimation {
+        if !popularSearches.isEmpty {
+          currentSearchIndex = (currentSearchIndex + 1) % popularSearches.count
+        }
+      }
+    }
+  }
+
+  private func stopPopularSearchTimer() {
+    timer?.invalidate()
+    timer = nil
   }
 
   private func categorySelectView(
     categories: [(name: String, icon: String)],
-    selectedCategory: Binding<String?>,
+    selectedCategory: String?,
     onCategorySelected: @escaping (String) -> Void
   ) -> some View {
     HStack(spacing: 0) {
       ForEach(categories, id: \.name) { category in
-        let isSelected = selectedCategory.wrappedValue == category.name
+        let isSelected = selectedCategory == category.name
         Button(action: {
           onCategorySelected(category.name)
         }) {
@@ -337,6 +341,32 @@ struct MainHomeView: View {
     .padding(20)
   }
 
+  @ViewBuilder
+  private func storeListSection() -> some View {
+    if filteredAndSortedNearbyStores.isEmpty {
+      VStack(spacing: 16) {
+        Image("empty-store")
+          .resizable()
+          .scaledToFit()
+          .frame(width: 120, height: 120)
+        Text("주변에 가게가 없어요")
+          .font(.Pretendard.body1)
+          .foregroundStyle(.g60)
+      }
+      .frame(maxWidth: .infinity)
+      .padding(.vertical, 40)
+    } else {
+      ForEach(filteredAndSortedNearbyStores, id: \.id) { store in
+        StoreListCellView(
+          store: store,
+          onLikeToggled: { storeModel.dispatch(.toggleStoreLike(storeId: store.id)) }
+        )
+        .onTapGesture {
+          navigate(.push(HomeRoute.storeDetail(storeId: store.id)))
+        }
+      }
+    }
+  }
 }
 
 // MARK: - 하위 컴포넌트
@@ -367,7 +397,6 @@ struct LocationView: View {
     .padding(.horizontal, 20)
   }
 }
-
 
 struct PopularStoresListView: View {
   let stores: [StoreInfo]
@@ -472,7 +501,7 @@ struct PopularStoresListView: View {
           .padding(.leading, 10)
 
           .foregroundColor(.blackSprout)
-        Text("\(store.geolocation.longitude ?? 0)km")
+        Text("\(store.geolocation.longitude)km")
           .font(.Pretendard.body3)
           .foregroundColor(.g75)
         Image("time")
@@ -480,7 +509,7 @@ struct PopularStoresListView: View {
           .frame(width: 16, height: 16)
 
           .foregroundColor(.blackSprout)
-        Text(store.close ?? "정보 없음")
+        Text(store.close)
           .font(.Pretendard.body3)
           .foregroundColor(.g75)
         Image("run")
@@ -498,10 +527,10 @@ struct PopularStoresListView: View {
   }
 }
 
-enum MyPickSort: String, CaseIterable {
-  case latest = "최신순"
+enum NearbySort: String, CaseIterable {
   case distance = "거리순"
-  case rating = "평점순"
+  case orders = "주문수"
+  case reviews = "리뷰수"
   var title: String { rawValue }
 }
 
@@ -520,5 +549,12 @@ struct PickchelinLabel: View {
       }
       .padding([.vertical, .leading], 4)
     }
+  }
+}
+
+struct ScrollOffsetPreferenceKey: PreferenceKey {
+  static var defaultValue: CGFloat = 0
+  static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+    value = nextValue()
   }
 }

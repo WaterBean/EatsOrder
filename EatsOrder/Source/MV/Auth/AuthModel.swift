@@ -224,7 +224,7 @@ final class AuthModel: ObservableObject {
     dispatch(.clearError)
     
     do {
-      let response: Message = try await service.request(
+      let response: ResponseDTOs.Message = try await service.request(
         endpoint: UserEndpoint.validateEmail(email: email)
       )
       dispatch(.setEmailValidationResult(result: response.message))
