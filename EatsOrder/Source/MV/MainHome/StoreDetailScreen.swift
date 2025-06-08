@@ -24,7 +24,14 @@ struct StoreDetailScreen: View {
     StoreDetailView(
       detail: storeDetail, onBack: { dismiss() },
       onLikeToggled: {
-        // 좋아요 토글 로직 (API 연동 필요)
+        Task {
+          try? await model.toggleStoreLike(
+            storeId: storeId, 
+            currentLikeStatus: storeDetail.isPick
+          )
+          // Update local state after successful toggle
+          storeDetail.isPick.toggle()
+        }
       }
     )
     .task { storeDetail = await model.fetchDetail(storeId: storeId) }
@@ -68,13 +75,18 @@ struct StoreDetailView: View {
                   .clipShape(Circle())
               }
               Spacer()
-              Button(action: onLikeToggled) {
-                Image(detail.isPick ? "like-fill" : "like-empty")
-                  .foregroundColor(detail.isPick ? .blackSprout : .white)
-                  .padding(12)
-                  .background(Color.black.opacity(0.3))
-                  .clipShape(Circle())
+              LikeButton(
+                isLiked: detail.isPick,
+                size: 24,
+                padding: 0,
+                likedColor: .blackSprout,
+                unlikedColor: .white
+              ) {
+                onLikeToggled()
               }
+              .frame(width: 44, height: 44)
+              .background(Color.black.opacity(0.3))
+              .clipShape(Circle())
             }
             .padding(.horizontal, 16)
             .padding(.top, 44)  // 노치/상단 safe area 고려

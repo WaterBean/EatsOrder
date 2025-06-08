@@ -34,10 +34,15 @@ struct StoreListCellView: View {
 
           HStack {
             // 좋아요 버튼
-            Button(action: onLikeToggled) {
-              Image(store.isPick ? "like-fill" : "like-empty")
-                .foregroundColor(store.isPick ? .blackSprout : .white)
-                .font(.system(size: 18, weight: .bold))
+            LikeButton(
+              isLiked: store.isPick,
+              size: 18,
+              padding: 0,
+              likedColor: .blackSprout,
+              unlikedColor: .white
+            ) {
+              // Propagate the async action to parent
+              onLikeToggled()
             }
             .frame(width: 32, height: 32)
             Spacer()

@@ -64,12 +64,22 @@ final class StoreModel: ObservableObject {
       self.nextCursor = cursor
 
     // 가게 좋아요 토글
-    case .toggleStoreLike:
+    case .toggleStoreLike(let storeId):
+      // 이제 직접 async 함수로 호출하므로 dispatch에서는 제거
       break
     }
   }
 
   // MARK: - 공개 메서드
+
+  // 가게 좋아요 토글
+  func toggleStoreLike(storeId: String, currentLikeStatus: Bool) async throws {
+    let newLikeStatus = !currentLikeStatus
+    
+    let _: ResponseDTOs.StoreLike = try await networkService.request(
+      endpoint: StoreEndpoint.storeLike(storeId: storeId, likeStatus: newLikeStatus)
+    )
+  }
 
   // 검색어 설정
   func updateSearchText(_ text: String) {

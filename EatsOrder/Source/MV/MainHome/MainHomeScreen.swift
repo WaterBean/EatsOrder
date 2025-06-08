@@ -94,9 +94,6 @@ struct MainHomeScreen: View {
                 PopularStoresListView(
                   stores: filteredPopularStores.isEmpty && selectedCategory == nil
                     ? popularStores : filteredPopularStores,
-                  onLikeToggled: { storeId in
-                    storeModel.dispatch(.toggleStoreLike(storeId: storeId))
-                  },
                   onStoreDetailSelected: { storeId in
                     navigate(.push(HomeRoute.storeDetail(storeId: storeId)))
                   }
@@ -359,7 +356,11 @@ struct MainHomeScreen: View {
       ForEach(filteredAndSortedNearbyStores, id: \.id) { store in
         StoreListCellView(
           store: store,
-          onLikeToggled: { storeModel.dispatch(.toggleStoreLike(storeId: store.id)) }
+          onLikeToggled: { 
+            Task { 
+              try? await storeModel.toggleStoreLike(storeId: store.id, currentLikeStatus: store.isPick) 
+            } 
+          }
         )
         .onTapGesture {
           navigate(.push(HomeRoute.storeDetail(storeId: store.id)))
@@ -400,17 +401,14 @@ struct LocationView: View {
 
 struct PopularStoresListView: View {
   let stores: [StoreInfo]
-  let onLikeToggled: (String) -> Void
   let onStoreDetailSelected: (String) -> Void
+  @EnvironmentObject var storeModel: StoreModel
 
   var body: some View {
     ScrollView(.horizontal, showsIndicators: false) {
       HStack(spacing: 12) {
         ForEach(stores, id: \.id) { store in
-          popularShopItemView(
-            store: store,
-            onLikeToggled: { onLikeToggled(store.id) }
-          )
+          popularShopItemView(store: store)
           .onTapGesture {
             onStoreDetailSelected(store.id)
           }
@@ -420,14 +418,11 @@ struct PopularStoresListView: View {
     }
   }
 
-  private func popularShopItemView(store: StoreInfo, onLikeToggled: @escaping () -> Void)
+  private func popularShopItemView(store: StoreInfo)
     -> some View
   {
     VStack(spacing: 0) {
-      header(
-        isLiked: store.isPick,
-        onLikeToggled: onLikeToggled
-      )
+      header(store: store)
       Spacer()
       infoView(store: store)
         .frame(height: 56)
@@ -455,23 +450,24 @@ struct PopularStoresListView: View {
 
   }
   private func header(
-    isLiked: Bool,
-    onLikeToggled: @escaping () -> Void
+    store: StoreInfo
   ) -> some View {
     HStack {
-      likeButton(isLiked: isLiked, onLikeToggled: onLikeToggled)
+      LikeButton(
+        isLiked: store.isPick,
+        size: 20,
+        padding: 8,
+        likedColor: .blackSprout,
+        unlikedColor: .white
+      ) {
+        try await storeModel.toggleStoreLike(storeId: store.id, currentLikeStatus: store.isPick)
+      }
       Spacer()
-      PickchelinLabel()
+      if store.isPicchelin {
+        PickchelinLabel()
+      }
     }
     .padding(.horizontal, 12)
-  }
-
-  private func likeButton(isLiked: Bool, onLikeToggled: @escaping () -> Void) -> some View {
-    Button(action: onLikeToggled) {
-      Image(isLiked ? "like-fill" : "like-empty")
-        .foregroundColor(isLiked ? .blackSprout : .g30)
-        .padding(8)
-    }
   }
 
   private func infoView(store: StoreInfo) -> some View {
