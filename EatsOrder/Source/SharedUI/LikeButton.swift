@@ -2,7 +2,7 @@
 //  LikeButton.swift
 //  EatsOrder
 //
-//  Created by Assistant on current date.
+//  Created by 한수빈 on 2025/06/09.
 //
 
 import SwiftUI
@@ -26,7 +26,6 @@ struct LikeButton: View {
   @State private var localIsLiked: Bool
   @State private var isProcessing: Bool = false
   @State private var showHeartBurst: Bool = false
-  @State private var animationScale: CGFloat = 1.0
   @State private var rotationAngle: Double = 0
   
   init(
@@ -55,7 +54,7 @@ struct LikeButton: View {
             Image(systemName: "heart.fill")
               .foregroundColor(likedColor.opacity(0.6))
               .font(.system(size: size * 0.4))
-              .offset(heartBurstOffset(for: index))
+//              .offset(heartBurstOffset(for: index))
               .opacity(showHeartBurst ? 0 : 1)
               .scaleEffect(showHeartBurst ? 1.5 : 0.5)
               .animation(
@@ -99,7 +98,6 @@ struct LikeButton: View {
     
     withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
       localIsLiked = newState
-      animationScale = animationScale == 1.0 ? 1.2 : 1.0
       
       if newState {
         rotationAngle = 15
@@ -112,7 +110,6 @@ struct LikeButton: View {
     // Reset animation states
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
       withAnimation {
-        animationScale = 1.0
         rotationAngle = 0
       }
     }
@@ -157,74 +154,13 @@ struct LikeButton: View {
     }
   }
   
-  private func heartBurstOffset(for index: Int) -> CGSize {
-    let angle = Double(index) * (360.0 / 8.0) * .pi / 180
-    let distance: CGFloat = showHeartBurst ? size * 1.5 : 0
-    return CGSize(
-      width: cos(angle) * distance,
-      height: sin(angle) * distance
-    )
-  }
+//  private func heartBurstOffset(for index: Int) -> CGSize {
+//    let angle = Double(index) * (360.0 / 8.0) * .pi / 180
+//    let distance: CGFloat = showHeartBurst ? size * 1.5 : 0
+//    return CGSize(
+//      width: cos(angle) * distance,
+//      height: sin(angle) * distance
+//    )
+//  }
 }
 
-// MARK: - Convenience initializer for sync actions
-extension LikeButton {
-  init(
-    isLiked: Bool,
-    size: CGFloat = 24,
-    padding: CGFloat = 8,
-    likedColor: Color = .blackSprout,
-    unlikedColor: Color = .g30,
-    onToggle: @escaping () -> Void
-  ) {
-    self.init(
-      isLiked: isLiked,
-      size: size,
-      padding: padding,
-      likedColor: likedColor,
-      unlikedColor: unlikedColor,
-      onToggle: {
-        onToggle()
-      }
-    )
-  }
-}
-
-// MARK: - Preview
-struct LikeButton_Previews: PreviewProvider {
-  static var previews: some View {
-    VStack(spacing: 40) {
-      // Standard like button
-      LikeButton(isLiked: false) {
-        print("Like toggled")
-      }
-      
-      // Liked state
-      LikeButton(isLiked: true) {
-        print("Like toggled")
-      }
-      
-      // Custom size and colors
-      LikeButton(
-        isLiked: false,
-        size: 32,
-        padding: 12,
-        likedColor: .red,
-        unlikedColor: .gray
-      ) {
-        print("Custom like toggled")
-      }
-      
-      // With async action
-      LikeButton(isLiked: false) {
-        // Simulate API call
-        try await Task.sleep(nanoseconds: 1_000_000_000)
-        // Randomly fail for demo
-        if Bool.random() {
-          throw NSError(domain: "test", code: 0)
-        }
-      }
-    }
-    .padding()
-  }
-}

@@ -56,7 +56,7 @@ struct StoreDetail: Entity {
   let parkingGuide: String?
   let storeImageUrls: [String]
   let isPicchelin: Bool
-  let isPick: Bool
+  var isPick: Bool
   let pickCount: Int
   let totalReviewCount: Int
   let totalOrderCount: Int
