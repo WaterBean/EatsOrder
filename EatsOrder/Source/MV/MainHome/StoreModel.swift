@@ -33,6 +33,42 @@ final class StoreModel: ObservableObject {
   @Published private(set) var nextCursor: String = ""
   @Published private(set) var isLoading: Bool = false
   @Published private(set) var error: String? = nil
+  @Published var popularStores: [StoreInfo] = []
+  @Published var nearbyStores: [StoreInfo] = []
+  @Published var storeDetails: [String: StoreDetail] = [:]
+  @Published var selectedCategory: String? = nil
+  @Published var filterPicchelin: Bool = false
+  @Published var filterMyPick: Bool = false
+  @Published var nearbySort: NearbySort = .distance
+
+  // 인기 맛집 카테고리 필터링 연산 프로퍼티
+  var filteredPopularStores: [StoreInfo] {
+    if let selected = selectedCategory {
+      return popularStores.filter { $0.category == selected }
+    } else {
+      return popularStores
+    }
+  }
+
+  // 주변 가게 정렬/필터 연산 프로퍼티
+  var filteredAndSortedNearbyStores: [StoreInfo] {
+    var result = nearbyStores
+    if filterPicchelin && filterMyPick {
+      result = result.filter { $0.isPicchelin && $0.isPick }
+    } else if filterPicchelin {
+      result = result.filter { $0.isPicchelin }
+    } else if filterMyPick {
+      result = result.filter { $0.isPick }
+    }
+    switch nearbySort {
+    case .orders:
+      return result.sorted { $0.totalOrderCount > $1.totalOrderCount }
+    case .reviews:
+      return result.sorted { $0.totalReviewCount > $1.totalReviewCount }
+    case .distance:
+      return result.sorted { $0.geolocation.longitude < $1.geolocation.longitude }
+    }
+  }
 
   // 서비스 의존성
   private let networkService: NetworkProtocol
@@ -64,12 +100,38 @@ final class StoreModel: ObservableObject {
       self.nextCursor = cursor
 
     // 가게 좋아요 토글
-    case .toggleStoreLike:
+    case .toggleStoreLike(let storeId):
+      // 이제 직접 async 함수로 호출하므로 dispatch에서는 제거
       break
     }
   }
 
   // MARK: - 공개 메서드
+
+  // 가게 좋아요 토글
+  func toggleStoreLike(storeId: String, currentLikeStatus: Bool) async throws {
+    let newLikeStatus = !currentLikeStatus
+    let _: ResponseDTOs.StoreLike = try await networkService.request(
+      endpoint: StoreEndpoint.storeLike(storeId: storeId, likeStatus: newLikeStatus)
+    )
+    await MainActor.run {
+      self.updateStoreLikeStatus(storeId: storeId, isPick: newLikeStatus)
+    }
+  }
+
+  // 좋아요 상태 동기화
+  func updateStoreLikeStatus(storeId: String, isPick: Bool) {
+    if let idx = popularStores.firstIndex(where: { $0.id == storeId }) {
+      popularStores[idx].isPick = isPick
+    }
+    if let idx = nearbyStores.firstIndex(where: { $0.id == storeId }) {
+      nearbyStores[idx].isPick = isPick
+    }
+    if var detail = storeDetails[storeId] {
+      detail.isPick = isPick
+      storeDetails[storeId] = detail
+    }
+  }
 
   // 검색어 설정
   func updateSearchText(_ text: String) {
@@ -81,7 +143,7 @@ final class StoreModel: ObservableObject {
       }
     }
   }
-  
+
   func fetchPopularSearches() async -> [String] {
     do {
       let response: PopularSearches = try await networkService.request(

@@ -13,21 +13,26 @@ struct StoreDetailScreen: View {
   let storeId: String
   @EnvironmentObject private var model: StoreModel
   @Environment(\.dismiss) private var dismiss
-  @State private var storeDetail = StoreDetail(
-    storeId: "", category: "", name: "", description: "", hashTags: [], open: "", close: "",
-    address: "", estimatedPickupTime: 0, parkingGuide: "", storeImageUrls: [], isPicchelin: false,
-    isPick: false, pickCount: 0, totalReviewCount: 0, totalOrderCount: 0, totalRating: 0,
-    creator: Creator(userId: "", nick: "", profileImage: ""), geolocation: GeoLocation(
-      longitude: 0, latitude: 0), menuList: [], createdAt: "", updatedAt: "")
 
   var body: some View {
+    let detail = model.storeDetails[storeId] ?? StoreDetail.empty
     StoreDetailView(
-      detail: storeDetail, onBack: { dismiss() },
+      detail: detail, onBack: { dismiss() },
       onLikeToggled: {
-        // 좋아요 토글 로직 (API 연동 필요)
+        Task {
+          try? await model.toggleStoreLike(
+            storeId: storeId,
+            currentLikeStatus: detail.isPick
+          )
+        }
       }
     )
-    .task { storeDetail = await model.fetchDetail(storeId: storeId) }
+    .task {
+      let fetched = await model.fetchDetail(storeId: storeId)
+      await MainActor.run {
+        model.storeDetails[storeId] = fetched
+      }
+    }
     .navigationBarBackButtonHidden(true)
     .tabBarHidden()
     .ignoresSafeArea()
@@ -68,13 +73,18 @@ struct StoreDetailView: View {
                   .clipShape(Circle())
               }
               Spacer()
-              Button(action: onLikeToggled) {
-                Image(detail.isPick ? "like-fill" : "like-empty")
-                  .foregroundColor(detail.isPick ? .blackSprout : .white)
-                  .padding(12)
-                  .background(Color.black.opacity(0.3))
-                  .clipShape(Circle())
+              LikeButton(
+                isLiked: detail.isPick,
+                size: 24,
+                padding: 0,
+                likedColor: .blackSprout,
+                unlikedColor: .white
+              ) {
+                onLikeToggled()
               }
+              .frame(width: 44, height: 44)
+              .background(Color.black.opacity(0.3))
+              .clipShape(Circle())
             }
             .padding(.horizontal, 16)
             .padding(.top, 44)  // 노치/상단 safe area 고려
@@ -141,7 +151,7 @@ struct StoreDetailView: View {
                 Text("예상 소요시간 \(detail.estimatedPickupTime) (")
                   .font(.Pretendard.caption1)
                 Text(String(format: "%.1fkm", 0.0))
-                    .font(.Pretendard.caption1)
+                  .font(.Pretendard.caption1)
                 Text(")")
                   .font(.Pretendard.caption1)
               }
@@ -371,7 +381,6 @@ struct MenuCellView: View {
     .padding(.vertical, 12)
   }
 }
-
 
 struct MenuCategoryStickyHeader: View {
   let categories: [String]

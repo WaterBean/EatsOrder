@@ -15,12 +15,6 @@ struct MainHomeScreen: View {
 
   // 상태: Screen에서만 소유
   @State private var selectedCategory: String? = nil
-  @State private var nearbySort: NearbySort = .distance
-  @State private var filterPicchelin: Bool = false
-  @State private var filterMyPick: Bool = false
-  @State private var popularStores: [StoreInfo] = []
-  @State private var filteredPopularStores: [StoreInfo] = []
-  @State private var nearbyStores: [StoreInfo] = []
   @State private var nextCursor: String = ""
   @State private var isLoadingMore: Bool = false
   @State private var isEndReached: Bool = false
@@ -68,20 +62,18 @@ struct MainHomeScreen: View {
           VStack(spacing: 0) {
             categorySelectView(
               categories: Category.allCases.map { ($0.rawValue, $0.icon) },
-              selectedCategory: selectedCategory,
+              selectedCategory: storeModel.selectedCategory,
               onCategorySelected: { category in
-                if selectedCategory == category {
-                  selectedCategory = nil
-                  filteredPopularStores = popularStores
+                if storeModel.selectedCategory == category {
+                  storeModel.selectedCategory = nil
                 } else {
-                  selectedCategory = category
-                  filteredPopularStores = popularStores.filter { $0.category == category }
+                  storeModel.selectedCategory = category
                 }
               }
             )
             SectionHeaderView(title: "실시간 인기 맛집")
             Group {
-              if selectedCategory != nil, filteredPopularStores.isEmpty {
+              if storeModel.selectedCategory != nil, storeModel.filteredPopularStores.isEmpty {
                 VStack {
                   Spacer()
                   Text("해당하는 가게가 없습니다")
@@ -92,31 +84,31 @@ struct MainHomeScreen: View {
                 .frame(minHeight: 196)
               } else {
                 PopularStoresListView(
-                  stores: filteredPopularStores.isEmpty && selectedCategory == nil
-                    ? popularStores : filteredPopularStores,
-                  onLikeToggled: { storeId in
-                    storeModel.dispatch(.toggleStoreLike(storeId: storeId))
-                  },
+                  stores: storeModel.filteredPopularStores,
                   onStoreDetailSelected: { storeId in
                     navigate(.push(HomeRoute.storeDetail(storeId: storeId)))
+                  },
+                  onLikeToggled: { store in
+                    try await storeModel.toggleStoreLike(
+                      storeId: store.id, currentLikeStatus: store.isPick)
                   }
                 )
               }
             }
-
             SectionHeaderView(
               title: "내 주변 가게",
               trailing:
                 HStack(spacing: 8) {
                   ForEach(NearbySort.allCases, id: \.self) { sort in
-                    Button(action: { nearbySort = sort }) {
+                    Button(action: { storeModel.nearbySort = sort }) {
                       Text(sort.title)
                         .font(.caption)
-                        .foregroundColor(nearbySort == sort ? .deepSprout : .gray)
+                        .foregroundColor(storeModel.nearbySort == sort ? .deepSprout : .gray)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
                         .background(
-                          nearbySort == sort ? Color.brightSprout.opacity(0.2) : Color.clear
+                          storeModel.nearbySort == sort
+                            ? Color.brightSprout.opacity(0.2) : Color.clear
                         )
                         .cornerRadius(12)
                     }
@@ -124,24 +116,24 @@ struct MainHomeScreen: View {
                 }
             )
             HStack(spacing: 12) {
-              Toggle(isOn: $filterPicchelin) {
+              Toggle(isOn: $storeModel.filterPicchelin) {
                 HStack(spacing: 4) {
-                  Image(systemName: filterPicchelin ? "checkmark.square.fill" : "square")
-                    .foregroundColor(filterPicchelin ? .deepSprout : .g60)
+                  Image(systemName: storeModel.filterPicchelin ? "checkmark.square.fill" : "square")
+                    .foregroundColor(storeModel.filterPicchelin ? .deepSprout : .g60)
                   Text("픽슐랭")
                     .font(.Pretendard.body3.weight(.medium))
-                    .foregroundColor(filterPicchelin ? .deepSprout : .g60)
+                    .foregroundColor(storeModel.filterPicchelin ? .deepSprout : .g60)
                 }
               }
               .toggleStyle(.button)
               .buttonStyle(.plain)
-              Toggle(isOn: $filterMyPick) {
+              Toggle(isOn: $storeModel.filterMyPick) {
                 HStack(spacing: 4) {
-                  Image(systemName: filterMyPick ? "checkmark.square.fill" : "square")
-                    .foregroundColor(filterMyPick ? .deepSprout : .g60)
+                  Image(systemName: storeModel.filterMyPick ? "checkmark.square.fill" : "square")
+                    .foregroundColor(storeModel.filterMyPick ? .deepSprout : .g60)
                   Text("My Pick")
                     .font(.Pretendard.body3.weight(.medium))
-                    .foregroundColor(filterMyPick ? .deepSprout : .g60)
+                    .foregroundColor(storeModel.filterMyPick ? .deepSprout : .g60)
                 }
               }
               .toggleStyle(.button)
@@ -149,7 +141,7 @@ struct MainHomeScreen: View {
               Spacer()
             }
             .padding(.horizontal)
-            storeListSection()
+            storeListSection(stores: storeModel.filteredAndSortedNearbyStores)
             GeometryReader { geo in
               Color.clear
                 .preference(key: ScrollOffsetPreferenceKey.self, value: geo.frame(in: .global).maxY)
@@ -165,7 +157,9 @@ struct MainHomeScreen: View {
       .onPreferenceChange(ScrollOffsetPreferenceKey.self) { maxY in
         print("onPreferenceChange called, maxY: \(maxY)")
         // 하단 근처(200pt 이내)에서만 트리거
-        if maxY < screenHeight + 400, !isLoadingMore, !isEndReached, !nearbyStores.isEmpty {
+        if maxY < screenHeight + 400, !isLoadingMore, !isEndReached,
+          !storeModel.nearbyStores.isEmpty
+        {
           Task { await loadMoreNearbyStores() }
         }
       }
@@ -176,8 +170,7 @@ struct MainHomeScreen: View {
       didLoad = true
       isInitialLoading = true
       locationModel.startUpdatingLocation()
-      popularStores = await storeModel.fetchPopularStores(category: nil)
-      filteredPopularStores = popularStores
+      storeModel.popularStores = await storeModel.fetchPopularStores(category: nil)
       popularSearches = await storeModel.fetchPopularSearches()
       await reloadNearbyStores()
       isInitialLoading = false
@@ -187,32 +180,11 @@ struct MainHomeScreen: View {
     }
   }
 
-  // 필터/정렬 적용 함수
-  var filteredAndSortedNearbyStores: [StoreInfo] {
-    var result = nearbyStores
-    if filterPicchelin && filterMyPick {
-      result = result.filter { $0.isPicchelin && $0.isPick }
-    } else if filterPicchelin {
-      result = result.filter { $0.isPicchelin }
-    } else if filterMyPick {
-      result = result.filter { $0.isPick }
-    }
-    switch nearbySort {
-    case .orders:
-      return result.sorted { $0.totalOrderCount > $1.totalOrderCount }
-    case .reviews:
-      return result.sorted { $0.totalReviewCount > $1.totalReviewCount }
-    case .distance:
-      return result.sorted { $0.geolocation.longitude < $1.geolocation.longitude }
-    }
-  }
-
   // 내 주변 가게 페이지네이션 및 초기화 함수
   func reloadNearbyStores() async {
     isLoadingMore = true
     isEndReached = false
     nextCursor = ""
-    nearbyStores = []
     errorMessage = nil
     let (stores, cursor) = await storeModel.fetchNearbyStores(
       latitude: locationModel.recentLocation.geoLocation.coordinate.latitude,
@@ -222,7 +194,9 @@ struct MainHomeScreen: View {
       limit: 10,
       orderBy: "distance"
     )
-    nearbyStores = stores
+    await MainActor.run {
+      storeModel.nearbyStores = stores
+    }
     nextCursor = cursor
     isEndReached = (cursor == "0")
     isLoadingMore = false
@@ -240,13 +214,19 @@ struct MainHomeScreen: View {
       orderBy: "distance"
     )
     // 중복 id 제거 후 append
-    let newStores = stores.filter { new in !nearbyStores.contains(where: { $0.id == new.id }) }
-    nearbyStores.append(contentsOf: newStores)
+    let newStores = stores.filter { new in
+      !storeModel.nearbyStores.contains(where: { $0.id == new.id })
+    }
+    await MainActor.run {
+      storeModel.nearbyStores.append(contentsOf: newStores)
+    }
     nextCursor = cursor
     isEndReached = (cursor == "0")
     isLoadingMore = false
   }
 
+  
+  // 검색어
   private func popularSearchTermsView(popularSearches: [String]) -> some View {
     HStack(spacing: 8) {
       Image("ai")
@@ -342,8 +322,8 @@ struct MainHomeScreen: View {
   }
 
   @ViewBuilder
-  private func storeListSection() -> some View {
-    if filteredAndSortedNearbyStores.isEmpty {
+  private func storeListSection(stores: [StoreInfo]) -> some View {
+    if stores.isEmpty {
       VStack(spacing: 16) {
         Image("empty-store")
           .resizable()
@@ -356,10 +336,15 @@ struct MainHomeScreen: View {
       .frame(maxWidth: .infinity)
       .padding(.vertical, 40)
     } else {
-      ForEach(filteredAndSortedNearbyStores, id: \.id) { store in
+      ForEach(stores, id: \.id) { store in
         StoreListCellView(
           store: store,
-          onLikeToggled: { storeModel.dispatch(.toggleStoreLike(storeId: store.id)) }
+          onLikeToggled: {
+            Task {
+              try? await storeModel.toggleStoreLike(
+                storeId: store.id, currentLikeStatus: store.isPick)
+            }
+          }
         )
         .onTapGesture {
           navigate(.push(HomeRoute.storeDetail(storeId: store.id)))
@@ -400,34 +385,26 @@ struct LocationView: View {
 
 struct PopularStoresListView: View {
   let stores: [StoreInfo]
-  let onLikeToggled: (String) -> Void
   let onStoreDetailSelected: (String) -> Void
+  let onLikeToggled: (StoreInfo) async throws -> Void
 
   var body: some View {
     ScrollView(.horizontal, showsIndicators: false) {
       HStack(spacing: 12) {
         ForEach(stores, id: \.id) { store in
-          popularShopItemView(
-            store: store,
-            onLikeToggled: { onLikeToggled(store.id) }
-          )
-          .onTapGesture {
-            onStoreDetailSelected(store.id)
-          }
+          popularShopItemView(store: store)
+            .onTapGesture {
+              onStoreDetailSelected(store.id)
+            }
         }
       }
       .padding([.horizontal, .bottom], 20)
     }
   }
 
-  private func popularShopItemView(store: StoreInfo, onLikeToggled: @escaping () -> Void)
-    -> some View
-  {
+  private func popularShopItemView(store: StoreInfo) -> some View {
     VStack(spacing: 0) {
-      header(
-        isLiked: store.isPick,
-        onLikeToggled: onLikeToggled
-      )
+      header(store: store)
       Spacer()
       infoView(store: store)
         .frame(height: 56)
@@ -443,7 +420,6 @@ struct PopularStoresListView: View {
         },
         placeholder: {
           Color.gray
-
         },
         errorView: { error in
           Text(error.localizedDescription)
@@ -452,26 +428,25 @@ struct PopularStoresListView: View {
     )
     .clipShape(RoundedRectangle(cornerRadius: 16))
     .shadow(color: Color.black.opacity(0.06), radius: 4, x: 0, y: 2)
-
   }
-  private func header(
-    isLiked: Bool,
-    onLikeToggled: @escaping () -> Void
-  ) -> some View {
+
+  private func header(store: StoreInfo) -> some View {
     HStack {
-      likeButton(isLiked: isLiked, onLikeToggled: onLikeToggled)
+      LikeButton(
+        isLiked: store.isPick,
+        size: 20,
+        padding: 8,
+        likedColor: .blackSprout,
+        unlikedColor: .white
+      ) {
+        try await onLikeToggled(store)
+      }
       Spacer()
-      PickchelinLabel()
+      if store.isPicchelin {
+        PickchelinLabel()
+      }
     }
     .padding(.horizontal, 12)
-  }
-
-  private func likeButton(isLiked: Bool, onLikeToggled: @escaping () -> Void) -> some View {
-    Button(action: onLikeToggled) {
-      Image(isLiked ? "like-fill" : "like-empty")
-        .foregroundColor(isLiked ? .blackSprout : .g30)
-        .padding(8)
-    }
   }
 
   private func infoView(store: StoreInfo) -> some View {
@@ -499,7 +474,6 @@ struct PopularStoresListView: View {
           .resizable()
           .frame(width: 16, height: 16)
           .padding(.leading, 10)
-
           .foregroundColor(.blackSprout)
         Text("\(store.geolocation.longitude)km")
           .font(.Pretendard.body3)
@@ -507,7 +481,6 @@ struct PopularStoresListView: View {
         Image("time")
           .resizable()
           .frame(width: 16, height: 16)
-
           .foregroundColor(.blackSprout)
         Text(store.close)
           .font(.Pretendard.body3)
