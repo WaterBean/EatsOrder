@@ -221,9 +221,7 @@ struct StoreDetailView: View {
         }
       }
     }
-    .navigationBarHidden(true)
     .navigationBarBackButtonHidden(true)
-    .toolbar(.hidden, for: .navigationBar)
   }
 
   // MARK: - InfoCard/메뉴 셀 (SharedUI로 분리 권장, 여기선 placeholder)

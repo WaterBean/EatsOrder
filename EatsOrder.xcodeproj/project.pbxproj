@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		550077A52DF6B2B500349188 /* iamport-ios in Frameworks */ = {isa = PBXBuildFile; productRef = 550077A42DF6B2B500349188 /* iamport-ios */; };
 		55FB97B32DCDECB20094B3B8 /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = 55FB97B22DCDECB20094B3B8 /* .gitignore */; };
 		55FB98742DD9C5280094B3B8 /* KakaoSDK in Frameworks */ = {isa = PBXBuildFile; productRef = 55FB98732DD9C5280094B3B8 /* KakaoSDK */; };
 		55FB98762DD9C5280094B3B8 /* KakaoSDKAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 55FB98752DD9C5280094B3B8 /* KakaoSDKAuth */; };
@@ -77,6 +78,7 @@
 				55FB987A2DD9C5280094B3B8 /* KakaoSDKCertCore in Frameworks */,
 				55FB98782DD9C5280094B3B8 /* KakaoSDKCert in Frameworks */,
 				55FB98742DD9C5280094B3B8 /* KakaoSDK in Frameworks */,
+				550077A52DF6B2B500349188 /* iamport-ios in Frameworks */,
 				55FB987C2DD9C5280094B3B8 /* KakaoSDKCommon in Frameworks */,
 				55FB98762DD9C5280094B3B8 /* KakaoSDKAuth in Frameworks */,
 			);
@@ -138,6 +140,7 @@
 				55FB98772DD9C5280094B3B8 /* KakaoSDKCert */,
 				55FB98792DD9C5280094B3B8 /* KakaoSDKCertCore */,
 				55FB987B2DD9C5280094B3B8 /* KakaoSDKCommon */,
+				550077A42DF6B2B500349188 /* iamport-ios */,
 			);
 			productName = EatsOrder;
 			productReference = 55FB97882DCDEB3B0094B3B8 /* EatsOrder.app */;
@@ -219,6 +222,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				55FB98722DD9C5280094B3B8 /* XCRemoteSwiftPackageReference "kakao-ios-sdk" */,
+				550077A32DF6B2B500349188 /* XCRemoteSwiftPackageReference "iamport-ios" */,
 			);
 			preferredProjectObjectVersion = 90;
 			productRefGroup = 55FB97892DCDEB3B0094B3B8 /* Products */;
@@ -427,6 +431,7 @@
 				INFOPLIST_FILE = "EatsOrder/Resource/Supporting Files/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "잇츠오더(한수빈)";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.food-and-drink";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "픽업 위치를 편리하게 설정하기 위해서 위치 권한이 필요합니다.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -467,6 +472,7 @@
 				INFOPLIST_FILE = "EatsOrder/Resource/Supporting Files/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "잇츠오더(한수빈)";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.food-and-drink";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "픽업 위치를 편리하게 설정하기 위해서 위치 권한이 필요합니다.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -600,6 +606,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		550077A32DF6B2B500349188 /* XCRemoteSwiftPackageReference "iamport-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/iamport/iamport-ios.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.4.7;
+			};
+		};
 		55FB98722DD9C5280094B3B8 /* XCRemoteSwiftPackageReference "kakao-ios-sdk" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/kakao/kakao-ios-sdk";
@@ -611,6 +625,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		550077A42DF6B2B500349188 /* iamport-ios */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 550077A32DF6B2B500349188 /* XCRemoteSwiftPackageReference "iamport-ios" */;
+			productName = "iamport-ios";
+		};
 		55FB98732DD9C5280094B3B8 /* KakaoSDK */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 55FB98722DD9C5280094B3B8 /* XCRemoteSwiftPackageReference "kakao-ios-sdk" */;
