@@ -13,16 +13,18 @@ struct EatsOrderPreviewScreen: View {
   @StateObject private var profileModel: ProfileModel
   @StateObject private var storeModel: StoreModel
   @StateObject private var locationModel: LocationModel
+  @StateObject private var orderModel: OrderModel
   init() {
     // 의존성 설정
     let setup = DependencySetup()
-    let (authModel, profileModel, storeModel, locationModel) = setup.setupDependencies()
+    let (authModel, profileModel, storeModel, locationModel, orderModel) = setup.setupDependencies()
 
     // StateObject 초기화
     self._authModel = StateObject(wrappedValue: authModel)
     self._profileModel = StateObject(wrappedValue: profileModel)
     self._storeModel = StateObject(wrappedValue: storeModel)
     self._locationModel = StateObject(wrappedValue: locationModel)
+    self._orderModel = StateObject(wrappedValue: orderModel)
   }
 
   var body: some View {
@@ -32,12 +34,13 @@ struct EatsOrderPreviewScreen: View {
       .environmentObject(profileModel)
       .environmentObject(storeModel)
       .environmentObject(locationModel)
+      .environmentObject(orderModel)
   }
 }
 
 #Preview("StoreDetailScreen") {
   let setup = DependencySetup()
-  let (_, _, storeModel, _) = setup.setupDependencies()
+  let (_, _, storeModel, _, _) = setup.setupDependencies()
 
   return StoreDetailScreen(storeId: "682313acca81ef0db5a45c9b")
     .environmentObject(storeModel)
