@@ -120,6 +120,42 @@ struct ResponseDTOs {
     let imageUrl: String
     let linkUrl: String
   }
+  
+  struct ChatRoom: Decodable {
+    let roomId: String
+    let createdAt: String
+    let updatedAt: String
+    let participants: [ChatParticipant]
+    let lastChat: Chat?
+  }
+
+  struct ChatParticipant: Decodable {
+    let userId: String
+    let nick: String
+    let profileImage: String?
+  }
+
+  struct Chat: Decodable {
+    let chatId: String
+    let roomId: String
+    let content: String
+    let createdAt: String
+    let updatedAt: String
+    let sender: ChatParticipant
+    let files: [String]?
+  }
+
+  struct ChatRoomList: Decodable {
+    let data: [ChatRoom]
+  }
+
+  struct ChatList: Decodable {
+    let data: [Chat]
+  }
+
+  struct ChatFilesUpload: Decodable {
+    let files: [String]
+  }
 
 }
 

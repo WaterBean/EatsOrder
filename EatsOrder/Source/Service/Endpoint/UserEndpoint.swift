@@ -20,7 +20,7 @@ enum UserEndpoint: EndpointProtocol {
   // MARK: - EndpointProtocol 구현
   
   var baseURL: URL? {
-    return URL(string: Environments.baseURL)
+    return URL(string: Environments.baseURLV1)
   }
   
   var path: String {

@@ -20,7 +20,7 @@ enum StoreEndpoint: EndpointProtocol {
   case userReviews(userId: String, category: String?, next: String?, limit: Int?)
 
   var baseURL: URL? {
-    return URL(string: Environments.baseURL)
+    return URL(string: Environments.baseURLV1)
   }
 
   var path: String {

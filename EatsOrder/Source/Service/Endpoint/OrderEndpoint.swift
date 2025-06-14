@@ -14,7 +14,7 @@ enum OrderEndpoint: EndpointProtocol {
   case updateOrderStatus(orderCode: String, nextStatus: String)
 
   var baseURL: URL? {
-    return URL(string: Environments.baseURL)
+    return URL(string: Environments.baseURLV1)
   }
 
   var path: String {

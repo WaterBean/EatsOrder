@@ -58,4 +58,17 @@ enum RequestDTOs {
     let quantity: Int
   }
 
+  struct ChatRoomCreate: Encodable {
+    let opponent_id: String
+  }
+
+  struct ChatSend: Encodable {
+    let content: String
+    let files: [String]?
+  }
+
+  struct ChatFilesUpload: Encodable {
+    let files: [String]
+  }
+
 }
