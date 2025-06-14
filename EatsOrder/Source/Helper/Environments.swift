@@ -14,6 +14,9 @@ enum Environments {
   static var baseURL: String {
     Bundle.main.object(forInfoDictionaryKey: "BASE_URL") as! String
   }
+  static var baseURLV1: String {
+    baseURL + "/v1"
+  }
   static var kakaoNativeAppKey: String {
     Bundle.main.object(forInfoDictionaryKey: "KAKAO_NATIVE_APP_KEY") as! String
   }

@@ -8,6 +8,12 @@
 
 /* Begin PBXBuildFile section */
 		55A764F72DFD67A400E90C93 /* iamport-ios in Frameworks */ = {isa = PBXBuildFile; productRef = 55A764F62DFD67A400E90C93 /* iamport-ios */; };
+		55B78D922E0140ED00BE8AFE /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 55B78D912E0140ED00BE8AFE /* FirebaseAnalytics */; };
+		55B78D942E0140ED00BE8AFE /* FirebaseAnalyticsCore in Frameworks */ = {isa = PBXBuildFile; productRef = 55B78D932E0140ED00BE8AFE /* FirebaseAnalyticsCore */; };
+		55B78D962E0140ED00BE8AFE /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 55B78D952E0140ED00BE8AFE /* FirebaseCore */; };
+		55B78D982E0140ED00BE8AFE /* FirebaseInAppMessaging-Beta in Frameworks */ = {isa = PBXBuildFile; productRef = 55B78D972E0140ED00BE8AFE /* FirebaseInAppMessaging-Beta */; };
+		55B78D9A2E0140ED00BE8AFE /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 55B78D992E0140ED00BE8AFE /* FirebaseMessaging */; };
+		55B78D9D2E01416100BE8AFE /* SocketIO in Frameworks */ = {isa = PBXBuildFile; productRef = 55B78D9C2E01416100BE8AFE /* SocketIO */; };
 		55FB97B32DCDECB20094B3B8 /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = 55FB97B22DCDECB20094B3B8 /* .gitignore */; };
 		55FB98742DD9C5280094B3B8 /* KakaoSDK in Frameworks */ = {isa = PBXBuildFile; productRef = 55FB98732DD9C5280094B3B8 /* KakaoSDK */; };
 		55FB98762DD9C5280094B3B8 /* KakaoSDKAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 55FB98752DD9C5280094B3B8 /* KakaoSDKAuth */; };
@@ -75,12 +81,18 @@
 		55FB97852DCDEB3B0094B3B8 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
+				55B78D922E0140ED00BE8AFE /* FirebaseAnalytics in Frameworks */,
 				55FB987A2DD9C5280094B3B8 /* KakaoSDKCertCore in Frameworks */,
 				55FB98782DD9C5280094B3B8 /* KakaoSDKCert in Frameworks */,
 				55FB98742DD9C5280094B3B8 /* KakaoSDK in Frameworks */,
 				55A764F72DFD67A400E90C93 /* iamport-ios in Frameworks */,
+				55B78D9D2E01416100BE8AFE /* SocketIO in Frameworks */,
 				55FB987C2DD9C5280094B3B8 /* KakaoSDKCommon in Frameworks */,
 				55FB98762DD9C5280094B3B8 /* KakaoSDKAuth in Frameworks */,
+				55B78D962E0140ED00BE8AFE /* FirebaseCore in Frameworks */,
+				55B78D942E0140ED00BE8AFE /* FirebaseAnalyticsCore in Frameworks */,
+				55B78D9A2E0140ED00BE8AFE /* FirebaseMessaging in Frameworks */,
+				55B78D982E0140ED00BE8AFE /* FirebaseInAppMessaging-Beta in Frameworks */,
 			);
 		};
 		55FB97922DCDEB3D0094B3B8 /* Frameworks */ = {
@@ -141,6 +153,12 @@
 				55FB98792DD9C5280094B3B8 /* KakaoSDKCertCore */,
 				55FB987B2DD9C5280094B3B8 /* KakaoSDKCommon */,
 				55A764F62DFD67A400E90C93 /* iamport-ios */,
+				55B78D912E0140ED00BE8AFE /* FirebaseAnalytics */,
+				55B78D932E0140ED00BE8AFE /* FirebaseAnalyticsCore */,
+				55B78D952E0140ED00BE8AFE /* FirebaseCore */,
+				55B78D972E0140ED00BE8AFE /* FirebaseInAppMessaging-Beta */,
+				55B78D992E0140ED00BE8AFE /* FirebaseMessaging */,
+				55B78D9C2E01416100BE8AFE /* SocketIO */,
 			);
 			productName = EatsOrder;
 			productReference = 55FB97882DCDEB3B0094B3B8 /* EatsOrder.app */;
@@ -223,6 +241,8 @@
 			packageReferences = (
 				55FB98722DD9C5280094B3B8 /* XCRemoteSwiftPackageReference "kakao-ios-sdk" */,
 				55A764F52DFD67A400E90C93 /* XCRemoteSwiftPackageReference "iamport-ios" */,
+				55B78D902E0140ED00BE8AFE /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				55B78D9B2E01416100BE8AFE /* XCRemoteSwiftPackageReference "socket.io-client-swift" */,
 			);
 			preferredProjectObjectVersion = 90;
 			productRefGroup = 55FB97892DCDEB3B0094B3B8 /* Products */;
@@ -614,6 +634,22 @@
 				minimumVersion = 1.4.7;
 			};
 		};
+		55B78D902E0140ED00BE8AFE /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 11.14.0;
+			};
+		};
+		55B78D9B2E01416100BE8AFE /* XCRemoteSwiftPackageReference "socket.io-client-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/socketio/socket.io-client-swift.git";
+			requirement = {
+				kind = upToNextMinorVersion;
+				minimumVersion = 16.1.1;
+			};
+		};
 		55FB98722DD9C5280094B3B8 /* XCRemoteSwiftPackageReference "kakao-ios-sdk" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/kakao/kakao-ios-sdk";
@@ -629,6 +665,36 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 55A764F52DFD67A400E90C93 /* XCRemoteSwiftPackageReference "iamport-ios" */;
 			productName = "iamport-ios";
+		};
+		55B78D912E0140ED00BE8AFE /* FirebaseAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 55B78D902E0140ED00BE8AFE /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalytics;
+		};
+		55B78D932E0140ED00BE8AFE /* FirebaseAnalyticsCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 55B78D902E0140ED00BE8AFE /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalyticsCore;
+		};
+		55B78D952E0140ED00BE8AFE /* FirebaseCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 55B78D902E0140ED00BE8AFE /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCore;
+		};
+		55B78D972E0140ED00BE8AFE /* FirebaseInAppMessaging-Beta */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 55B78D902E0140ED00BE8AFE /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = "FirebaseInAppMessaging-Beta";
+		};
+		55B78D992E0140ED00BE8AFE /* FirebaseMessaging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 55B78D902E0140ED00BE8AFE /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseMessaging;
+		};
+		55B78D9C2E01416100BE8AFE /* SocketIO */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 55B78D9B2E01416100BE8AFE /* XCRemoteSwiftPackageReference "socket.io-client-swift" */;
+			productName = SocketIO;
 		};
 		55FB98732DD9C5280094B3B8 /* KakaoSDK */ = {
 			isa = XCSwiftPackageProductDependency;

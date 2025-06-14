@@ -196,7 +196,7 @@ actor ImageCacheManager {
     lastModified: String?,
     currentImage: UIImage
   ) async throws -> UIImage? {
-    guard let url = URL(string: Environments.baseURL + urlString) else {
+    guard let url = URL(string: Environments.baseURLV1 + urlString) else {
       throw URLError(.badURL)
     }
     
@@ -241,7 +241,7 @@ actor ImageCacheManager {
   
   // 네트워크에서 이미지 다운로드 (헤더 포함)
   private func downloadFromNetwork(urlString: String) async throws -> (UIImage, String?, String?) {
-    guard let url = URL(string: Environments.baseURL + urlString) else {
+    guard let url = URL(string: Environments.baseURLV1 + urlString) else {
       throw URLError(.badURL)
     }
     

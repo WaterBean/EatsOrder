@@ -12,7 +12,7 @@ enum AuthEndpoint: EndpointProtocol {
   case refresh(refreshToken: String)
   
   var baseURL: URL? {
-    return URL(string: Environments.baseURL)
+    return URL(string: Environments.baseURLV1)
   }
   
   var path: String {

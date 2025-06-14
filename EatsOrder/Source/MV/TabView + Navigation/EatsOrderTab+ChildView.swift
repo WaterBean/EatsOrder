@@ -28,7 +28,7 @@ enum EatsOrderTab: Int, Hashable, CaseIterable {
 enum HomeRoute: Hashable { case main, locationSelect, storeDetail(storeId: String) }
 enum OrderRoute: Hashable { case main }
 enum CommunityRoute: Hashable { case main }
-enum ProfileRoute: Hashable { case main }
+enum ProfileRoute: Hashable { case main, chattingRoom(roomId: String) }
 
 extension HomeRoute {
   @ViewBuilder
@@ -41,7 +41,6 @@ extension HomeRoute {
     case .storeDetail(let storeId):
       StoreDetailScreen(storeId: storeId)
     }
-
   }
 }
 
@@ -125,13 +124,31 @@ struct ProfileNavigationStack: View {
   @EnvironmentObject private var router: Router
   var body: some View {
     NavigationStack(path: $router.profilePath) {
-      Color.purple
-        .navigationDestination(for: ProfileRoute.self) { route in
-          switch route {
-          case .main:
-            Color.purple
+      ChattingRoomListScreen()
+              .onNavigate { navType in
+          switch navType {
+          case .push(let route):
+            if let navigatedRoute = route as? ProfileRoute {
+              router.profilePath.append(navigatedRoute)
+            }
+          case .unwind:
+            router.profilePath.removeLast()
           }
         }
+        .navigationDestination(for: ProfileRoute.self) { $0.destinationScreen() }
+
+    }
+  }
+}
+
+extension ProfileRoute {
+  @ViewBuilder
+  func destinationScreen() -> some View {
+    switch self {
+    case .main:
+      ChattingRoomListScreen()
+    case .chattingRoom(let roomId):
+      ChattingRoomScreen(roomId: roomId)
     }
   }
 }
