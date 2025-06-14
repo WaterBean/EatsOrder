@@ -21,10 +21,17 @@ struct EatsOrderTabContainer: View {
   @EnvironmentObject var authModel: AuthModel
   @EnvironmentObject var profileModel: ProfileModel
   @EnvironmentObject var storeModel: StoreModel
+  @EnvironmentObject var orderModel: OrderModel
   @State private var isShowSignInScreen = false
   @State private var selectedTabIndex = 0
   @State private var isTabBarHidden = false
   @StateObject private var router = Router()
+  @Namespace private var animation
+  @State private var showCart = false
+
+  var cartCount: Int {
+    orderModel.cart?.totalQuantity ?? 0
+  }
 
   var body: some View {
     ZStack(alignment: .bottom) {
@@ -39,8 +46,38 @@ struct EatsOrderTabContainer: View {
       }
       Group {
         EatsOrderTabView(selectedTabIndex: $selectedTabIndex)
-        TabBarFloatingButton()
-          .offset(y: -45)
+        if !showCart {
+          TabBarFloatingButton(
+            onTap: {
+              withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
+                showCart = true
+              }
+            },
+            cartCount: cartCount,
+            animation: animation
+          )
+          .padding(.bottom, 38)
+          .transition(.scale)
+
+        } else {
+          CartFullScreen(
+            animation: animation,
+            cart: orderModel.cart,
+            onUpdateQuantity: { menuId, quantity in
+              orderModel.updateMenuQuantity(menuId: menuId, quantity: quantity)
+            },
+            onRemove: { menuId in
+              orderModel.removeMenuFromCart(menuId: menuId)
+            },
+            onClose: {
+              withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
+                showCart = false
+              }
+            }
+          )
+          .transition(.identity)
+
+        }
       }
       .offset(y: isTabBarHidden ? 120 : 0)
       .opacity(isTabBarHidden ? 0 : 1)
@@ -64,7 +101,6 @@ struct EatsOrderTabContainer: View {
         isShowSignInScreen = false
       }
     }
-    // 환경에 router 주입
     .environmentObject(router)
     .environment(\.isTabBarHidden, $isTabBarHidden)
   }

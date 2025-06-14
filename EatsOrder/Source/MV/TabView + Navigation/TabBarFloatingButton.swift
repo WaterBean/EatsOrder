@@ -9,19 +9,31 @@ import SwiftUI
 
 // 플로팅 버튼
 struct TabBarFloatingButton: View {
+  let onTap: () -> Void
+  let cartCount: Int
+  let animation: Namespace.ID
   var body: some View {
-    Button(action: {
-      // 액션
-    }) {
-      ZStack {
+    ZStack {
+      Circle()
+        .fill(Color.blackSprout)
+        .frame(width: 56, height: 56)
+        .matchedGeometryEffect(id: "cartFab", in: animation)
+      Image(systemName: "cart")
+        .foregroundColor(.white)
+      if cartCount > 0 {
         Circle()
-          .fill(.blackSprout)
-          .frame(width: 56, height: 56)
-          .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
-        
-        Image("pick-fill")
-          .foregroundStyle(.white)
+          .fill(Color.white)
+          .frame(width: 20, height: 20)
+          .offset(x: 20, y: -20)
+        Text("\(cartCount)")
+          .font(.caption2.weight(.bold))
+          .foregroundColor(.blackSprout)
+          .offset(x: 20, y: -20)
       }
     }
+    .ignoresSafeArea(.keyboard, edges: .bottom)
+    .shadow(radius: 4, y: 2)
+    .onTapGesture { onTap() }
   }
 }
+

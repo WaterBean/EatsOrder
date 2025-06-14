@@ -41,4 +41,21 @@ enum RequestDTOs {
   struct StoreLike: Encodable {
     let like_status: Bool
   }
+  
+  struct OrderCreate: Encodable {
+    let store_id: String
+    let order_menu_list: [OrderMenu]
+    let total_price: Int
+  }
+
+  struct OrderStatusUpdate: Encodable {
+    let nextStatus: String
+  }
+
+  // 주문 메뉴 정보
+  struct OrderMenu: Encodable {
+    let menu_id: String
+    let quantity: Int
+  }
+
 }
