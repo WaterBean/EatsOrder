@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		55A764F72DFD67A400E90C93 /* iamport-ios in Frameworks */ = {isa = PBXBuildFile; productRef = 55A764F62DFD67A400E90C93 /* iamport-ios */; };
 		55FB97B32DCDECB20094B3B8 /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = 55FB97B22DCDECB20094B3B8 /* .gitignore */; };
 		55FB98742DD9C5280094B3B8 /* KakaoSDK in Frameworks */ = {isa = PBXBuildFile; productRef = 55FB98732DD9C5280094B3B8 /* KakaoSDK */; };
 		55FB98762DD9C5280094B3B8 /* KakaoSDKAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 55FB98752DD9C5280094B3B8 /* KakaoSDKAuth */; };
@@ -77,6 +78,7 @@
 				55FB987A2DD9C5280094B3B8 /* KakaoSDKCertCore in Frameworks */,
 				55FB98782DD9C5280094B3B8 /* KakaoSDKCert in Frameworks */,
 				55FB98742DD9C5280094B3B8 /* KakaoSDK in Frameworks */,
+				55A764F72DFD67A400E90C93 /* iamport-ios in Frameworks */,
 				55FB987C2DD9C5280094B3B8 /* KakaoSDKCommon in Frameworks */,
 				55FB98762DD9C5280094B3B8 /* KakaoSDKAuth in Frameworks */,
 			);
@@ -138,6 +140,7 @@
 				55FB98772DD9C5280094B3B8 /* KakaoSDKCert */,
 				55FB98792DD9C5280094B3B8 /* KakaoSDKCertCore */,
 				55FB987B2DD9C5280094B3B8 /* KakaoSDKCommon */,
+				55A764F62DFD67A400E90C93 /* iamport-ios */,
 			);
 			productName = EatsOrder;
 			productReference = 55FB97882DCDEB3B0094B3B8 /* EatsOrder.app */;
@@ -219,6 +222,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				55FB98722DD9C5280094B3B8 /* XCRemoteSwiftPackageReference "kakao-ios-sdk" */,
+				55A764F52DFD67A400E90C93 /* XCRemoteSwiftPackageReference "iamport-ios" */,
 			);
 			preferredProjectObjectVersion = 90;
 			productRefGroup = 55FB97892DCDEB3B0094B3B8 /* Products */;
@@ -600,6 +604,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		55A764F52DFD67A400E90C93 /* XCRemoteSwiftPackageReference "iamport-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/iamport/iamport-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.4.7;
+			};
+		};
 		55FB98722DD9C5280094B3B8 /* XCRemoteSwiftPackageReference "kakao-ios-sdk" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/kakao/kakao-ios-sdk";
@@ -611,6 +623,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		55A764F62DFD67A400E90C93 /* iamport-ios */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 55A764F52DFD67A400E90C93 /* XCRemoteSwiftPackageReference "iamport-ios" */;
+			productName = "iamport-ios";
+		};
 		55FB98732DD9C5280094B3B8 /* KakaoSDK */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 55FB98722DD9C5280094B3B8 /* XCRemoteSwiftPackageReference "kakao-ios-sdk" */;
