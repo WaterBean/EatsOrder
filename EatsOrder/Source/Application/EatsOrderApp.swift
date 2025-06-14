@@ -19,6 +19,8 @@ struct EatsOrderApp: App {
   @StateObject private var locationModel: LocationModel
   @StateObject private var orderModel: OrderModel
   @StateObject private var chatModel: ChatModel
+  @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
+  
   init() {
     // KakaoSDK 초기화
     KakaoSDK.initSDK(appKey: Environments.kakaoNativeAppKey)
