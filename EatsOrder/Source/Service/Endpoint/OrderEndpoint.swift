@@ -12,6 +12,7 @@ enum OrderEndpoint: EndpointProtocol {
   case createOrder(storeId: String, orderMenuList: [RequestDTOs.OrderMenu], totalPrice: Int)
   case fetchOrders
   case updateOrderStatus(orderCode: String, nextStatus: String)
+  case validatePayment(impUid: String)
 
   var baseURL: URL? {
     return URL(string: Environments.baseURLV1)
@@ -25,6 +26,8 @@ enum OrderEndpoint: EndpointProtocol {
       return "/orders"
     case .updateOrderStatus(let orderCode, _):
       return "/orders/\(orderCode)"
+    case .validatePayment:
+      return "/payments/validation"
     }
   }
 
@@ -36,6 +39,8 @@ enum OrderEndpoint: EndpointProtocol {
       return .get
     case .updateOrderStatus:
       return .put
+    case .validatePayment:
+      return .post
     }
   }
 
@@ -44,6 +49,8 @@ enum OrderEndpoint: EndpointProtocol {
     case .createOrder, .updateOrderStatus:
       return nil
     case .fetchOrders:
+      return nil
+    case .validatePayment:
       return nil
     }
   }
@@ -63,6 +70,8 @@ enum OrderEndpoint: EndpointProtocol {
       return RequestDTOs.OrderStatusUpdate(nextStatus: nextStatus)
     case .fetchOrders:
       return nil
+    case .validatePayment(let impUid):
+      return ["imp_uid": impUid]
     }
   }
 }

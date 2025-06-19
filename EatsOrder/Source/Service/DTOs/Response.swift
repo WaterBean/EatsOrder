@@ -10,9 +10,9 @@ import Foundation
 struct ResponseDTOs {
   // 주문 생성 응답
   struct OrderCreate: Decodable {
-    let order_id: String
-    let order_code: String
-    let total_price: Int
+    let orderId: String
+    let orderCode: String
+    let totalPrice: Int
     let createdAt: String
     let updatedAt: String
   }
@@ -23,14 +23,12 @@ struct ResponseDTOs {
   }
 
   struct Order: Decodable {
-    let order_id: String
-    let order_code: String
-    let total_price: Int
+    let orderId: String
+    let orderCode: String
+    let totalPrice: Int
     let review: Review?
     let store: Store
-    let order_menu_list: [OrderMenu]
-    let current_order_status: String
-    let order_status_timeline: [OrderStatusTimeline]
+    let orderMenuList: [OrderMenu]
     let paidAt: String?
     let createdAt: String
     let updatedAt: String
@@ -46,7 +44,7 @@ struct ResponseDTOs {
     let category: String
     let name: String
     let close: String
-    let store_image_urls: [String]
+    let storeImageUrls: [String]
     let hashTags: [String]
     let geolocation: Geolocation
     let createdAt: String
@@ -68,10 +66,10 @@ struct ResponseDTOs {
     let category: String
     let name: String
     let description: String
-    let origin_information: String
+    let originInformation: String
     let price: Int
     let tags: [String]
-    let menu_image_url: String
+    let menuImageUrl: String
     let createdAt: String
     let updatedAt: String
   }
@@ -155,6 +153,13 @@ struct ResponseDTOs {
 
   struct ChatFilesUpload: Decodable {
     let files: [String]
+  }
+
+  struct PaymentValidation: Decodable {
+    let paymentId: String
+    let orderItem: Order
+    let createdAt: String
+    let updatedAt: String
   }
 
 }
