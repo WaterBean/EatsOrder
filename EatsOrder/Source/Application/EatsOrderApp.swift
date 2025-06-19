@@ -9,7 +9,7 @@ import Combine
 import KakaoSDKAuth
 import KakaoSDKCommon
 import SwiftUI
-//import iamport_ios
+import iamport_ios
 
 @main
 struct EatsOrderApp: App {
@@ -56,7 +56,7 @@ struct EatsOrderApp: App {
       _ = AuthController.handleOpenUrl(url: url)
       return
     } else {
-//      Iamport.shared.receivedURL(url)
+      Iamport.shared.receivedURL(url)
       return
     }
   }

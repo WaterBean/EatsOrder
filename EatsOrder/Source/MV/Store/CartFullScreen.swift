@@ -6,9 +6,118 @@
 //
 
 import SwiftUI
+import WebKit
+import iamport_ios
+
+struct PaymentRequest: Entity {
+  let pg: String
+  let merchant_uid: String
+  let amount: Int
+  let pay_method: String
+  let name: String
+  let buyer_name: String
+  let app_scheme: String
+  var id: String { merchant_uid }
+}
+
+struct PaymentWebViewModeView: UIViewControllerRepresentable {
+  let userCode: String
+  let orderCode: String
+  let totalPrice: Int
+  let storeName: String
+  let onResult: (IamportResponse) -> Void
+
+  func makeUIViewController(context: Context) -> PaymentWebViewModeViewController {
+    PaymentWebViewModeViewController(
+      userCode: userCode,
+      orderCode: orderCode,
+      totalPrice: totalPrice,
+      storeName: storeName,
+      onResult: onResult
+    )
+  }
+
+  func updateUIViewController(
+    _ uiViewController: PaymentWebViewModeViewController, context: Context
+  ) {}
+}
+
+class PaymentWebViewModeViewController: UIViewController, WKNavigationDelegate {
+  let userCode: String
+  let orderCode: String
+  let totalPrice: Int
+  let storeName: String
+  let onResult: (IamportResponse) -> Void
+
+  private lazy var wkWebView: WKWebView = {
+    let view = WKWebView()
+    view.backgroundColor = UIColor.clear
+    view.navigationDelegate = self
+    return view
+  }()
+
+  init(
+    userCode: String,
+    orderCode: String,
+    totalPrice: Int,
+    storeName: String,
+    onResult: @escaping (IamportResponse) -> Void
+  ) {
+    self.userCode = userCode
+    self.orderCode = orderCode
+    self.totalPrice = totalPrice
+    self.storeName = storeName
+    self.onResult = onResult
+    super.init(nibName: nil, bundle: nil)
+  }
+
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
+
+  override func viewDidLoad() {
+    super.viewDidLoad()
+    view.backgroundColor = .white
+    attachWebView()
+    requestPayment()
+  }
+
+  private func attachWebView() {
+    view.addSubview(wkWebView)
+    wkWebView.translatesAutoresizingMaskIntoConstraints = false
+    NSLayoutConstraint.activate([
+      wkWebView.topAnchor.constraint(equalTo: view.topAnchor),
+      wkWebView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+      wkWebView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+      wkWebView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+    ])
+  }
+
+  func requestPayment() {
+    let payment = IamportPayment(
+      pg: PG.html5_inicis.makePgRawName(pgId: "INIpayTest"),
+      merchant_uid: orderCode,
+      amount: "\(totalPrice)"
+    ).then {
+      $0.pay_method = "card"
+      $0.name = storeName
+      $0.buyer_name = "한수빈"
+      $0.app_scheme = "taylor.EatsOrder"
+    }
+
+    Iamport.shared.paymentWebView(webViewMode: wkWebView, userCode: userCode, payment: payment) {
+      [weak self] response in
+      if let response = response {
+        self?.onResult(response)
+      }
+      self?.dismiss(animated: true)
+    }
+  }
+}
 
 struct CartFullScreen: View {
   @EnvironmentObject private var orderModel: OrderModel
+  @Environment(\.navigate) private var navigate
   let animation: Namespace.ID
   let cart: Cart?
   let onUpdateQuantity: (String, Int) -> Void
@@ -85,8 +194,7 @@ struct CartFullScreen: View {
         }
         Spacer()
         Button(action: {
-          // TODO: 주문하기 버튼 클릭 시 주문 화면으로 이동
-          //router.push(.order)
+          Task { await orderModel.preparePayment() }
         }) {
           Text("주문하기")
             .font(.title3.bold())
@@ -96,8 +204,24 @@ struct CartFullScreen: View {
             .background(Color.white)
             .cornerRadius(16)
         }
+        .disabled(cart == nil || cart?.items.isEmpty == true)
         .padding(.bottom, 40)
       }
+    }
+    .fullScreenCover(item: $orderModel.pendingPayment) { payment in
+      PaymentWebViewModeView(
+        userCode: "imp14511373",
+        orderCode: payment.orderCode,
+        totalPrice: payment.totalPrice,
+        storeName: payment.storeName,
+        onResult: { response in
+          Task { await orderModel.handlePaymentCallback(response: response) }
+        }
+      )
+    }
+    .alert(item: $orderModel.paymentResult) { result in
+      Alert(
+        title: Text(result.success ? "결제 성공!" : "결제 실패"), message: Text(result.message), dismissButton: .default(Text("확인")))
     }
   }
 }
