@@ -42,7 +42,7 @@ struct PaymentWebViewModeView: UIViewControllerRepresentable {
   ) {}
 }
 
-class PaymentWebViewModeViewController: UIViewController, WKNavigationDelegate {
+final class PaymentWebViewModeViewController: UIViewController, WKNavigationDelegate {
   let userCode: String
   let orderCode: String
   let totalPrice: Int
@@ -123,6 +123,7 @@ struct CartFullScreen: View {
   let onUpdateQuantity: (String, Int) -> Void
   let onRemove: (String) -> Void
   let onClose: () -> Void
+  let onPaymentSuccess: () -> Void
 
   var body: some View {
     ZStack(alignment: .topTrailing) {
@@ -219,9 +220,22 @@ struct CartFullScreen: View {
         }
       )
     }
-    .alert(item: $orderModel.paymentResult) { result in
+    .alert(
+      isPresented: Binding<Bool>(
+        get: { (orderModel.paymentResult?.success == false) },
+        set: { newValue in if !newValue { orderModel.paymentResult = nil } }
+      )
+    ) {
       Alert(
-        title: Text(result.success ? "결제 성공!" : "결제 실패"), message: Text(result.message), dismissButton: .default(Text("확인")))
+        title: Text("결제 실패"),
+        message: Text(orderModel.paymentResult?.message ?? "알 수 없는 오류"),
+        dismissButton: .default(Text("확인"))
+      )
+    }
+    .onChange(of: orderModel.paymentResult?.success) { newSuccess in
+      if newSuccess == true {
+        onPaymentSuccess()
+      }
     }
   }
 }

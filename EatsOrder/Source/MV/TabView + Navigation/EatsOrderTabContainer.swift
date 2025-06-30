@@ -23,8 +23,7 @@ struct EatsOrderTabContainer: View {
   @EnvironmentObject var storeModel: StoreModel
   @EnvironmentObject var orderModel: OrderModel
   @State private var isShowSignInScreen = false
-  @State private var selectedTabIndex = 0
-  @State private var isTabBarHidden = false
+  @State private var isTabBarHidden: Bool = false
   @StateObject private var router = Router()
   @Namespace private var animation
   @State private var showCart = false
@@ -35,7 +34,7 @@ struct EatsOrderTabContainer: View {
 
   var body: some View {
     ZStack(alignment: .bottom) {
-      TabView(selection: $selectedTabIndex) {
+      TabView(selection: $router.selectedTab) {
         ForEach(EatsOrderTab.allCases, id: \.self) { tab in
           tab.screen
             .tag(tab.rawValue)
@@ -45,7 +44,7 @@ struct EatsOrderTabContainer: View {
         .edgesIgnoringSafeArea(.all)
       }
       Group {
-        EatsOrderTabView(selectedTabIndex: $selectedTabIndex)
+        EatsOrderTabView(selectedTab: $router.selectedTab)
         if !showCart {
           TabBarFloatingButton(
             onTap: {
@@ -72,6 +71,13 @@ struct EatsOrderTabContainer: View {
             onClose: {
               withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
                 showCart = false
+              }
+            },
+            onPaymentSuccess: {
+              withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
+                showCart = false
+                router.homePath.removeAll()
+                router.selectedTab = .order
               }
             }
           )
@@ -107,7 +113,7 @@ struct EatsOrderTabContainer: View {
 }
 
 struct EatsOrderTabView: View {
-  @Binding var selectedTabIndex: Int
+  @Binding var selectedTab: EatsOrderTab
 
   var body: some View {
     VStack(spacing: 0) {
@@ -126,9 +132,9 @@ struct EatsOrderTabView: View {
             Spacer()
             TabButton(
               icon: EatsOrderTab.allCases[index].iconName,
-              isSelected: selectedTabIndex == index
+              isSelected: selectedTab == EatsOrderTab.allCases[index]
             ) {
-              selectedTabIndex = index
+              selectedTab = EatsOrderTab.allCases[index]
             }
             Spacer()
           }
@@ -141,9 +147,9 @@ struct EatsOrderTabView: View {
             Spacer()
             TabButton(
               icon: EatsOrderTab.allCases[index].iconName,
-              isSelected: selectedTabIndex == index
+              isSelected: selectedTab == EatsOrderTab.allCases[index]
             ) {
-              selectedTabIndex = index
+              selectedTab = EatsOrderTab.allCases[index]
             }
             Spacer()
           }

@@ -14,6 +14,7 @@ struct StoreDetailScreen: View {
   @EnvironmentObject private var storeModel: StoreModel
   @EnvironmentObject private var orderModel: OrderModel
   @Environment(\.dismiss) private var dismiss
+  @EnvironmentObject private var router: Router
   @State private var showCartSheet: Bool = false
   @State private var stepperVisible: [String: Bool] = [:]  // 메뉴별 stepper 상태
   @State private var timerDict: [String: Timer] = [:]
@@ -103,7 +104,12 @@ struct StoreDetailScreen: View {
           orderModel.updateMenuQuantity(menuId: menuId, quantity: quantity)
         },
         onRemove: { menuId in orderModel.removeMenuFromCart(menuId: menuId) },
-        onClose: { showCartSheet = false }
+        onClose: { showCartSheet = false },
+        onPaymentSuccess: {
+          showCartSheet = false
+          router.homePath.removeAll()
+          router.selectedTab = .order
+        }
       )
     }
     .task {

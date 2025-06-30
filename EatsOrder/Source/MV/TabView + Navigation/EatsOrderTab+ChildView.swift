@@ -46,6 +46,7 @@ extension HomeRoute {
 
 // 탭별 path를 관리하는 라우터
 final class Router: ObservableObject {
+  @Published var selectedTab: EatsOrderTab = .home
   @Published var homePath: [HomeRoute] = []
   @Published var orderPath: [OrderRoute] = []
   @Published var communityPath: [CommunityRoute] = []
@@ -94,11 +95,11 @@ struct OrderNavigationStack: View {
   @EnvironmentObject private var router: Router
   var body: some View {
     NavigationStack(path: $router.orderPath) {
-      Color.green
+      OrderScreen()
         .navigationDestination(for: OrderRoute.self) { route in
           switch route {
           case .main:
-            Color.green
+            OrderScreen()
           }
         }
     }
