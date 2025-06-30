@@ -134,5 +134,96 @@ final class OrderModel: ObservableObject {
     pendingPayment = nil
   }
 
-  // 주문 내역 조회 등은 네트워크 연동 후 추가 예정
+  // 주문 내역 조회 (네트워크 연동)
+  func fetchOrderList() async {
+    do {
+      let endpoint = OrderEndpoint.fetchOrders
+      let response: ResponseDTOs.OrderList = try await networkService.request(endpoint: endpoint)
+      let orders = response.data.map { $0.toEntity() }
+        .sorted { ($0.paidAt) > ($1.paidAt) }
+      await MainActor.run {
+        self.orderList = orders
+      }
+    } catch {
+      print("주문 내역 조회 실패: \(error)")
+      await MainActor.run {
+        self.orderList = []
+      }
+    }
+  }
+}
+
+// MARK: - DTO → Entity 변환
+private extension ResponseDTOs.Order {
+  func toEntity() -> Order {
+    Order(
+      id: orderId,
+      orderCode: orderCode,
+      store: store.toEntity(),
+      items: orderMenuList.map { $0.toEntity() },
+      totalPrice: totalPrice,
+      status: OrderStatus(rawValue: currentOrderStatus) ?? .fail,
+      createdAt: createdAt.toDate() ?? Date(),
+      updatedAt: updatedAt.toDate() ?? Date(),
+      paidAt: paidAt.toDate() ?? Date(),
+      review: review?.toEntity() ?? Review.empty(),
+      statusTimeline: orderStatusTimeline.map { $0.toEntity() }
+    )
+  }
+}
+private extension ResponseDTOs.Menu {
+  func toEntity() -> CartMenuItem {
+    CartMenuItem(id: id, name: name, price: price, quantity: 0, isSoldOut: false)
+  }
+}
+
+private extension ResponseDTOs.Store {
+  func toEntity() -> StoreInfo {
+    StoreInfo(
+      storeId: id,
+      category: category,
+      name: name,
+      close: close,
+      storeImageUrls: storeImageUrls,
+      isPicchelin: false,  // 서버 응답에 따라 매핑 필요
+      isPick: false,  // 서버 응답에 따라 매핑 필요
+      pickCount: 0,  // 서버 응답에 따라 매핑 필요
+      hashTags: hashTags,
+      totalRating: 0,  // 서버 응답에 따라 매핑 필요
+      totalOrderCount: 0,  // 서버 응답에 따라 매핑 필요
+      totalReviewCount: 0,  // 서버 응답에 따라 매핑 필요
+      geolocation: GeoLocation(longitude: geolocation.longitude, latitude: geolocation.latitude),
+      distance: nil,  // 서버 응답에 따라 매핑 필요
+      createdAt: createdAt,
+      updatedAt: updatedAt
+    )
+  }
+}
+
+private extension ResponseDTOs.OrderMenu {
+  func toEntity() -> CartMenuItem {
+    CartMenuItem(
+      id: menu.id,
+      name: menu.name,
+      price: menu.price,
+      quantity: quantity,
+      isSoldOut: false
+    )
+  }
+}
+
+private extension ResponseDTOs.Review {
+  func toEntity() -> Review {
+    Review(id: id, rating: rating)
+  }
+}
+
+private extension ResponseDTOs.OrderStatusTimeline {
+  func toEntity() -> StatusTimeline {
+    StatusTimeline(
+      status: OrderStatus(rawValue: status) ?? .fail,
+      isCompleted: completed,
+      changedAt: changedAt?.toDate()
+    )
+  }
 }

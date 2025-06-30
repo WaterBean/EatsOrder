@@ -19,9 +19,6 @@ enum StoreAction {
   case setMyPickStores(stores: [StoreInfo])
   case setSearchText(text: String)
   case setNextCursor(cursor: String)
-
-  // 상태 변경 액션
-  case toggleStoreLike(storeId: String)
 }
 
 // MARK: - 스토어 모델
@@ -81,28 +78,23 @@ final class StoreModel: ObservableObject {
   // MARK: - 액션 디스패처 - 모든 상태 변경은 이 메서드를 통과
   func dispatch(_ action: StoreAction) {
     switch action {
-    // 로딩 상태 처리
+      // 로딩 상태 처리
     case .setLoading(let isLoading):
       self.isLoading = isLoading
-
-    // 오류 처리
+      
+      // 오류 처리
     case .setError(let message):
       self.error = message
-
-    // 데이터 액션 처리
+      
+      // 데이터 액션 처리
     case .setMyPickStores:
       break
-
+      
     case .setSearchText(let text):
       self.searchText = text
-
+      
     case .setNextCursor(let cursor):
       self.nextCursor = cursor
-
-    // 가게 좋아요 토글
-    case .toggleStoreLike(let storeId):
-      // 이제 직접 async 함수로 호출하므로 dispatch에서는 제거
-      break
     }
   }
 
@@ -115,7 +107,7 @@ final class StoreModel: ObservableObject {
       endpoint: StoreEndpoint.storeLike(storeId: storeId, likeStatus: newLikeStatus)
     )
     await MainActor.run {
-      self.updateStoreLikeStatus(storeId: storeId, isPick: newLikeStatus)
+      updateStoreLikeStatus(storeId: storeId, isPick: newLikeStatus)
     }
   }
 

@@ -29,7 +29,21 @@ struct ResponseDTOs {
     let review: Review?
     let store: Store
     let orderMenuList: [OrderMenu]
-    let paidAt: String?
+    let paidAt: String
+    let createdAt: String
+    let updatedAt: String
+    let currentOrderStatus: String
+    let orderStatusTimeline: [OrderStatusTimeline]
+  }
+
+  struct OrderReceipt: Decodable {
+    let orderId: String
+    let orderCode: String
+    let totalPrice: Int
+    let review: Review?
+    let store: Store
+    let orderMenuList: [OrderMenu]
+    let paidAt: String
     let createdAt: String
     let updatedAt: String
   }
@@ -157,7 +171,7 @@ struct ResponseDTOs {
 
   struct PaymentValidation: Decodable {
     let paymentId: String
-    let orderItem: Order
+    let orderItem: OrderReceipt
     let createdAt: String
     let updatedAt: String
   }
@@ -168,6 +182,7 @@ struct ResponseDTOs {
 extension String {
   func toDate() -> Date? {
     let formatter = ISO8601DateFormatter()
+    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
     return formatter.date(from: self)
   }
 }

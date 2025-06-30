@@ -115,7 +115,7 @@ final class NetworkService: NetworkProtocol {
       for m in middleware {
         m.didFail(error: error, request: request, data: data)
       }
-      throw NetworkError.decodingError(error.localizedDescription)
+      throw NetworkError.decodingError("\(error)")
     }
   }
 }
@@ -181,7 +181,7 @@ extension NetworkService {
       for m in middleware {
         m.didFail(error: error, request: request, data: data)
       }
-      throw NetworkError.decodingError(error.localizedDescription)
+      throw NetworkError.decodingError("\(error)")
     }
   }
 }
