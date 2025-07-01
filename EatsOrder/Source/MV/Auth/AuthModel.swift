@@ -32,9 +32,22 @@ enum AuthAction {
   
   // 세션 만료 알림 액션
   case showSessionExpiredAlert(show: Bool)
-  
+
   // 이메일 검증 결과 액션
   case setEmailValidationResult(result: String)
+}
+
+// 로그인 타입 enum 정의
+enum LoginType: String {
+  case email, kakao, apple
+
+  var displayName: String {
+    switch self {
+    case .email: return "email"
+    case .kakao: return "kakao"
+    case .apple: return "apple"
+    }
+  }
 }
 
 @MainActor
@@ -59,6 +72,22 @@ final class AuthModel: ObservableObject {
   @Published var loginSuccess: Bool = false
   @Published var joinSuccess: Bool = false
   @Published var showSessionExpiredAlert: Bool = false
+
+  // @UserDefault propertyWrapper 활용
+  @UserDefault(key: "lastLoginType", defaultValue: "") private var lastLoginTypeRaw: String
+  @UserDefault(key: "lastLoginDate", defaultValue: 0.0) private var lastLoginDateRaw: Double
+
+  private func saveLastLoginInfo(type: LoginType) {
+    lastLoginTypeRaw = type.rawValue
+    lastLoginDateRaw = Date().timeIntervalSince1970
+  }
+
+  var lastLoginType: LoginType? {
+    LoginType(rawValue: lastLoginTypeRaw)
+  }
+  var lastLoginDate: Date? {
+    lastLoginDateRaw > 0 ? Date(timeIntervalSince1970: lastLoginDateRaw) : nil
+  }
   
   // 초기화
   init(service: NetworkProtocol, tokenManager: TokenManager) {
@@ -167,7 +196,7 @@ final class AuthModel: ObservableObject {
       }
     }
   }
-  
+
   // 토큰 갱신 처리
   func handleTokenRefreshNeeded() async -> Bool {
     print("토큰 갱신 준비")
@@ -176,28 +205,21 @@ final class AuthModel: ObservableObject {
       print("토큰 갱신이 준비중임")
       return false
     }
-    
     // 상태 업데이트
     dispatch(.setSessionState(state: .refreshing))
     dispatch(.setLoading(isLoading: true))
-    
     do {
       // 리프레시 토큰으로 새 토큰 요청
       let refreshEndpoint = AuthEndpoint.refresh(refreshToken: tokenManager.refreshToken)
-      
-      // rawRequest 사용 (미들웨어를 거치지 않음)
       let response: Token = try await service.rawRequest(endpoint: refreshEndpoint)
-      
       // 새 토큰 저장
       dispatch(.saveTokens(accessToken: response.accessToken, refreshToken: response.refreshToken))
       dispatch(.setSessionState(state: .active))
       dispatch(.setLoading(isLoading: false))
-      
       print("토큰 갱신 성공")
       return true
     } catch {
       handleError(error: error, defaultMessage: "토큰 갱신 실패")
-      
       // 갱신 실패 - 세션 만료로 간주
       dispatch(.setSessionState(state: .expired))
       dispatch(.setLoading(isLoading: false))
@@ -232,7 +254,7 @@ final class AuthModel: ObservableObject {
       handleError(error: error, defaultMessage: "이메일 유효성 검사 실패")
       dispatch(.setEmailValidationResult(result: errorMessage))
     }
-    
+
     dispatch(.setLoading(isLoading: false))
   }
   
@@ -254,11 +276,14 @@ final class AuthModel: ObservableObject {
       dispatch(.setLoggedIn(isLoggedIn: true))
       dispatch(.setLoginSuccess(success: true))
       
+      // 마지막 로그인 정보 저장
+      saveLastLoginInfo(type: .email)
+      
       print("로그인 성공")
     } catch {
       handleError(error: error, defaultMessage: "로그인에 실패하였습니다")
     }
-    
+
     dispatch(.setLoading(isLoading: false))
   }
   
@@ -285,6 +310,9 @@ final class AuthModel: ObservableObject {
       dispatch(.setSessionState(state: .active))
       dispatch(.setLoggedIn(isLoggedIn: true))
       dispatch(.setJoinSuccess(success: true))
+
+      // 마지막 로그인 정보 저장
+      saveLastLoginInfo(type: .email)
       
       print("회원가입 성공")
     } catch {
@@ -311,6 +339,9 @@ final class AuthModel: ObservableObject {
       dispatch(.setSessionState(state: .active))
       dispatch(.setLoggedIn(isLoggedIn: true))
       dispatch(.setLoginSuccess(success: true))
+
+      // 마지막 로그인 정보 저장
+      saveLastLoginInfo(type: .kakao)
       
       print("카카오 로그인 성공")
     } catch {
@@ -337,6 +368,9 @@ final class AuthModel: ObservableObject {
       dispatch(.setSessionState(state: .active))
       dispatch(.setLoggedIn(isLoggedIn: true))
       dispatch(.setLoginSuccess(success: true))
+      
+      // 마지막 로그인 정보 저장
+      saveLastLoginInfo(type: .apple)
       
       print("애플 로그인 성공")
     } catch {

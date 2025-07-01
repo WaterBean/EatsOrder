@@ -10,6 +10,7 @@ import SwiftUI
 struct MainHomeScreen: View {
   @EnvironmentObject var storeModel: StoreModel
   @EnvironmentObject var locationModel: LocationModel
+  @EnvironmentObject var authModel: AuthModel
   @Environment(\.navigate) private var navigate
   @Environment(\.isTabBarHidden) private var isTabBarHidden
 
@@ -178,6 +179,15 @@ struct MainHomeScreen: View {
     .onChange(of: locationModel.recentLocation) { _ in
       Task { await reloadNearbyStores() }
     }
+    .onChange(of: authModel.isLoggedIn) { isLoggedIn in
+      if isLoggedIn {
+        Task {
+          storeModel.popularStores = await storeModel.fetchPopularStores(category: nil)
+          popularSearches = await storeModel.fetchPopularSearches()
+          await reloadNearbyStores()
+        }
+      }
+    }
   }
 
   // 내 주변 가게 페이지네이션 및 초기화 함수
@@ -209,7 +219,7 @@ struct MainHomeScreen: View {
       latitude: locationModel.recentLocation.geoLocation.coordinate.latitude,
       longitude: locationModel.recentLocation.geoLocation.coordinate.longitude,
       maxDistance: 3000,
-      next: nextCursor ?? "",
+      next: nextCursor,
       limit: 10,
       orderBy: "distance"
     )
@@ -507,23 +517,6 @@ enum NearbySort: String, CaseIterable {
   var title: String { rawValue }
 }
 
-struct PickchelinLabel: View {
-  var body: some View {
-    ZStack(alignment: .leading) {
-      Image("pickchelin-tag")
-      HStack(spacing: 4) {
-        Image("pick-fill")
-          .resizable()
-          .frame(width: 12, height: 12)
-          .foregroundColor(.white)
-        Text("픽슐랭")
-          .font(.Pretendard.caption2)
-          .foregroundColor(.white)
-      }
-      .padding([.vertical, .leading], 4)
-    }
-  }
-}
 
 struct ScrollOffsetPreferenceKey: PreferenceKey {
   static var defaultValue: CGFloat = 0

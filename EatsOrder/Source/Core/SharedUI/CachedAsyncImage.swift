@@ -386,7 +386,7 @@ enum ImageLoadingState {
 
 // MARK: - ObservableObject-based Image Loader (iOS 16 호환)
 @MainActor
-class ImageLoader: ObservableObject {
+final class ImageLoader: ObservableObject {
   @Published private(set) var state: ImageLoadingState = .idle
   private var currentTask: Task<Void, Never>?
   
@@ -463,7 +463,7 @@ class ImageLoader: ObservableObject {
 }
 
 // MARK: - CachedAsyncImage with iOS 16 compatibility
-struct CachedAsyncImage<Content: View, Placeholder: View, ErrorView: View>: View {
+public struct CachedAsyncImage<Content: View, Placeholder: View, ErrorView: View>: View {
   private let url: String
   private let content: (Image) -> Content
   private let placeholder: () -> Placeholder
@@ -483,7 +483,7 @@ struct CachedAsyncImage<Content: View, Placeholder: View, ErrorView: View>: View
     self.errorView = errorView
   }
   
-  var body: some View {
+  public var body: some View {
     Group {
       switch loader.state {
       case .idle, .loading:

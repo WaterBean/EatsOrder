@@ -7,16 +7,6 @@
 
 import SwiftUI
 
-private struct IsTabBarHiddenKey: EnvironmentKey {
-  static let defaultValue: Binding<Bool> = .constant(false)
-}
-extension EnvironmentValues {
-  var isTabBarHidden: Binding<Bool> {
-    get { self[IsTabBarHiddenKey.self] }
-    set { self[IsTabBarHiddenKey.self] = newValue }
-  }
-}
-
 struct EatsOrderTabContainer: View {
   @EnvironmentObject var authModel: AuthModel
   @EnvironmentObject var profileModel: ProfileModel
@@ -88,13 +78,21 @@ struct EatsOrderTabContainer: View {
       .offset(y: isTabBarHidden ? 120 : 0)
       .opacity(isTabBarHidden ? 0 : 1)
       .animation(.easeOut(duration: 0.35), value: isTabBarHidden)
+      if authModel.sessionState == .refreshing || authModel.isLoading {
+        Color.black.opacity(0.2).ignoresSafeArea()
+        ProgressView("토큰 갱신 중...")
+          .progressViewStyle(CircularProgressViewStyle())
+          .scaleEffect(1.5)
+      }
     }
     .fullScreenCover(isPresented: $isShowSignInScreen) {
       SignInScreen()
+        .interactiveDismissDisabled(true)
     }
     .alert("세션 만료", isPresented: $authModel.showSessionExpiredAlert) {
-      Button("로그인") {
+      Button("확인") {
         isShowSignInScreen = true
+        authModel.showSessionExpiredAlert = false
       }
     } message: {
       Text("세션이 만료되었습니다. 다시 로그인해주세요.")
@@ -183,19 +181,3 @@ struct TabButton: View {
   }
 }
 
-struct TabBarHiddenModifier: ViewModifier {
-  let hidden: Bool
-  @Environment(\.isTabBarHidden) private var isTabBarHidden
-
-  func body(content: Content) -> some View {
-    content
-      .onAppear { isTabBarHidden.wrappedValue = hidden }
-      .onDisappear { isTabBarHidden.wrappedValue = !hidden }
-  }
-}
-
-extension View {
-  func tabBarHidden(_ hidden: Bool = true) -> some View {
-    self.modifier(TabBarHiddenModifier(hidden: hidden))
-  }
-}

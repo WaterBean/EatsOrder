@@ -15,7 +15,6 @@ struct SignInScreen: View {
   @State private var isShowingEmailLogin = false
   @State private var isShowingEmailSignup = false
   @State private var navigationPath = NavigationPath()
-  @Environment(\.dismiss) private var dismiss
   
   var body: some View {
     NavigationStack(path: $navigationPath) {
@@ -23,8 +22,7 @@ struct SignInScreen: View {
         isShowingEmailLogin: $isShowingEmailLogin,
         isShowingEmailSignup: $isShowingEmailSignup,
         onKakaoLogin: performKakaoLogin,
-        onAppleSignIn: handleAppleSignIn,
-        onDismiss: { dismiss() }
+        onAppleSignIn: handleAppleSignIn
       )
       .navigationDestination(isPresented: $isShowingEmailLogin) {
         EmailLoginScreen()
@@ -32,11 +30,13 @@ struct SignInScreen: View {
       .navigationDestination(isPresented: $isShowingEmailSignup) {
         EmailSignUpScreen()
       }
-      .onReceive(authModel.$loginSuccess) { success in
-        if success { dismiss() }
-      }
-      .onReceive(authModel.$joinSuccess) { success in
-        if success { isShowingEmailSignup = false }
+      .onChange(of: authModel.isLoggedIn) { isLoggedIn in
+        if isLoggedIn {
+          // 로그인 성공 시에만 내려감
+          if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+            windowScene.windows.first?.rootViewController?.dismiss(animated: true)
+          }
+        }
       }
     }
   }
@@ -110,8 +110,8 @@ struct SignInScreen: View {
 }
 
 extension SignInWithAppleButton {
-    /// 애플 로그인 버튼을 앱의 디자인 스타일에 맞게 통일하는 모디파이어
-    func customAppleButtonStyle(height: CGFloat = 50) -> some View {
+  /// 애플 로그인 버튼을 앱의 디자인 스타일에 맞게 통일하는 모디파이어
+  func customAppleButtonStyle(height: CGFloat = 50) -> some View {
         self
             .frame(height: height)
             .padding(.horizontal, 20)
@@ -126,7 +126,6 @@ struct SignInView: View {
   @Binding var isShowingEmailSignup: Bool
   var onKakaoLogin: () -> Void
   var onAppleSignIn: (Result<ASAuthorization, Error>) -> Void
-  var onDismiss: () -> Void
   
   var body: some View {
     ZStack {
@@ -144,20 +143,7 @@ struct SignInView: View {
         .ignoresSafeArea()
       
       VStack(spacing: 30) {
-        // 상단 닫기 버튼
-        HStack {
-          Button {
-            onDismiss()
-          } label: {
-            Image(systemName: "xmark")
-              .font(.system(size: 20))
-              .foregroundColor(.white)
-              .padding(.leading, 20)
-          }
-          Spacer()
-        }
-        
-        Spacer()
+        Spacer().frame(height: 40)
         
         // 중앙 타이틀
         VStack(spacing: 4) {

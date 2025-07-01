@@ -7,14 +7,14 @@
 
 import SwiftUI
 
-var screenWidth: CGFloat {
+public var screenWidth: CGFloat {
   UIScreen.main.bounds.width
 }
 
-var screenHeight: CGFloat {
+public var screenHeight: CGFloat {
   UIScreen.main.bounds.height
 }
 
-var screenTopPadding: CGFloat {
+public var screenTopPadding: CGFloat {
   UIApplication.shared.windows.first?.safeAreaInsets.top ?? 0
 }

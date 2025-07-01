@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-extension Font {
+public extension Font {
   enum Pretendard {
     enum Size {
       static let title1: CGFloat = 20
