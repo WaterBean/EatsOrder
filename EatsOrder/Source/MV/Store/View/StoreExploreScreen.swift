@@ -1,5 +1,5 @@
 //
-//  MainHomeScreen.swift
+//  StoreExploreScreen.swift
 //  EatsOrder
 //
 //  Created by 한수빈 on 5/21/25.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct MainHomeScreen: View {
+struct StoreExploreScreen: View {
   @EnvironmentObject var storeModel: StoreModel
   @EnvironmentObject var locationModel: LocationModel
   @EnvironmentObject var authModel: AuthModel

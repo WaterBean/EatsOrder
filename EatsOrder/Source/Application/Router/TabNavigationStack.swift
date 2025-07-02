@@ -11,7 +11,7 @@ struct HomeNavigationStack: View {
   @EnvironmentObject private var router: Router
   var body: some View {
     NavigationStack(path: $router.homePath) {
-      MainHomeScreen()
+      StoreExploreScreen()
         .background(.brightSprout)
         .onNavigate { navType in
           switch navType {
@@ -62,7 +62,7 @@ struct ProfileNavigationStack: View {
   @EnvironmentObject private var router: Router
   var body: some View {
     NavigationStack(path: $router.profilePath) {
-      ChattingRoomListScreen()
+      ProfileScreen()
               .onNavigate { navType in
           switch navType {
           case .push(let route):

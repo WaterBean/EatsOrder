@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct ChattingRoomListScreen: View {
+struct ChattingRoomListView: View {
   @EnvironmentObject var chatModel: ChatModel
   @Environment(\.navigate) private var navigate
 

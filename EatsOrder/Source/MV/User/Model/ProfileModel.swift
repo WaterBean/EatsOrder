@@ -11,17 +11,22 @@ import Foundation
 final class ProfileModel: ObservableObject {
 
   let service: NetworkProtocol
+
+  @Published var profile: Profile? = nil
   
   init(service: NetworkProtocol) {
     self.service = service
   }
-  
-  func myProfile() async -> Profile {
+
+  func fetchMyProfile() async -> Profile {
     do {
       let profile: Profile = try await service.request(endpoint: UserEndpoint.myProfile)
+      self.profile = profile
       return profile
     } catch {
-      return Profile(userId: "", email: "", nick: "", profileImage: "", phoneNum: "")
+      let empty = Profile(userId: "", email: "", nick: "", profileImage: nil, phoneNum: "")
+      self.profile = empty
+      return empty
     }
   }
 }

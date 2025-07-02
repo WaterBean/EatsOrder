@@ -41,14 +41,4 @@ struct Join: Entity {
   }
 }
 
-struct Profile: Entity {
-  let userId: String
-  let email: String
-  let nick: String
-  let profileImage: String?
-  let phoneNum: String
 
-  var id: String {
-    userId
-  }
-}

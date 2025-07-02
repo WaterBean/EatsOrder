@@ -61,7 +61,7 @@ extension HomeRoute {
   func destinationScreen() -> some View {
     switch self {
     case .main:
-      MainHomeScreen()
+      StoreExploreScreen()
     case .locationSelect:
       LocationSelectScreen()
     case .storeDetail(let storeId):
@@ -75,7 +75,7 @@ extension ProfileRoute {
   func destinationScreen() -> some View {
     switch self {
     case .main:
-      ChattingRoomListScreen()
+      ProfileScreen()
     case .chattingRoom(let roomId):
       ChattingRoomScreen(roomId: roomId)
     }

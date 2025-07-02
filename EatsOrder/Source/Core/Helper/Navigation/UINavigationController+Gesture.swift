@@ -9,7 +9,7 @@ import SwiftUI
 
 // 네비게이션바를 숨겼을 때, 제스처가 동작하지 않는 현상을 해결하기 위한 확장
 
-public extension UINavigationController: @retroactive ObservableObject, @retroactive UIGestureRecognizerDelegate {
+extension UINavigationController: @retroactive ObservableObject, @retroactive UIGestureRecognizerDelegate {
     override open func viewDidLoad() {
         super.viewDidLoad()
         navigationBar.isHidden = true

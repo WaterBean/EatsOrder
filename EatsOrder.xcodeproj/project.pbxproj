@@ -51,6 +51,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				"Resource/Supporting Files/Info.plist",
+				Source/MV/User/ProfileScreen.swift,
 			);
 			target = 55FB97872DCDEB3B0094B3B8 /* EatsOrder */;
 		};
