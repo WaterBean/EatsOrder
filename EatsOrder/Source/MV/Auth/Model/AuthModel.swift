@@ -11,8 +11,6 @@ import KakaoSDKUser
 
 // 인증 관련 모든 액션을 정의하는 열거형
 enum AuthAction {
-  // 로딩 상태 액션
-  case setLoading(isLoading: Bool)
   
   // 오류 상태 액션
   case setError(message: String)
@@ -59,14 +57,13 @@ final class AuthModel: ObservableObject {
     case refreshing
     case expired
   }
-  
+
   private let service: NetworkProtocol
   private let tokenManager: TokenManager
   
   // 상태 관리
   @Published var sessionState: AuthState = .initial
   @Published var emailValidationResult: String = ""
-  @Published var isLoading: Bool = false
   @Published var errorMessage: String = ""
   @Published var isLoggedIn: Bool = false
   @Published var loginSuccess: Bool = false
@@ -114,8 +111,6 @@ final class AuthModel: ObservableObject {
   func dispatch(_ action: AuthAction) {
     switch action {
       // 로딩 상태 처리
-    case .setLoading(let isLoading):
-      self.isLoading = isLoading
       
       // 오류 처리
     case .setError(let message):
@@ -207,7 +202,6 @@ final class AuthModel: ObservableObject {
     }
     // 상태 업데이트
     dispatch(.setSessionState(state: .refreshing))
-    dispatch(.setLoading(isLoading: true))
     do {
       // 리프레시 토큰으로 새 토큰 요청
       let refreshEndpoint = AuthEndpoint.refresh(refreshToken: tokenManager.refreshToken)
@@ -215,14 +209,12 @@ final class AuthModel: ObservableObject {
       // 새 토큰 저장
       dispatch(.saveTokens(accessToken: response.accessToken, refreshToken: response.refreshToken))
       dispatch(.setSessionState(state: .active))
-      dispatch(.setLoading(isLoading: false))
       print("토큰 갱신 성공")
       return true
     } catch {
       handleError(error: error, defaultMessage: "토큰 갱신 실패")
       // 갱신 실패 - 세션 만료로 간주
       dispatch(.setSessionState(state: .expired))
-      dispatch(.setLoading(isLoading: false))
       return false
     }
   }
@@ -242,7 +234,6 @@ final class AuthModel: ObservableObject {
   
   // 이메일 유효성 검사
   func emailValidation(email: String) async {
-    dispatch(.setLoading(isLoading: true))
     dispatch(.clearError)
     
     do {
@@ -254,15 +245,11 @@ final class AuthModel: ObservableObject {
       handleError(error: error, defaultMessage: "이메일 유효성 검사 실패")
       dispatch(.setEmailValidationResult(result: errorMessage))
     }
-
-    dispatch(.setLoading(isLoading: false))
   }
   
   // 로그인
   func login(email: String, password: String, deviceToken: String = "") async {
     // 초기 상태 설정
-    dispatch(.setLoading(isLoading: true))
-    dispatch(.clearError)
     dispatch(.setLoginSuccess(success: false))
     
     do {
@@ -283,15 +270,11 @@ final class AuthModel: ObservableObject {
     } catch {
       handleError(error: error, defaultMessage: "로그인에 실패하였습니다")
     }
-
-    dispatch(.setLoading(isLoading: false))
   }
   
   // 회원가입
   func join(email: String, password: String, nick: String, phoneNum: String = "", deviceToken: String = "") async {
     // 초기 상태 설정
-    dispatch(.setLoading(isLoading: true))
-    dispatch(.clearError)
     dispatch(.setJoinSuccess(success: false))
     
     do {
@@ -318,15 +301,11 @@ final class AuthModel: ObservableObject {
     } catch {
       handleError(error: error, defaultMessage: "회원가입 실패")
     }
-    
-    dispatch(.setLoading(isLoading: false))
   }
   
   // 카카오 로그인
   func kakaoLogin(oauthToken: String, deviceToken: String = "") async {
     // 초기 상태 설정
-    dispatch(.setLoading(isLoading: true))
-    dispatch(.clearError)
     dispatch(.setLoginSuccess(success: false))
     
     do {
@@ -347,15 +326,11 @@ final class AuthModel: ObservableObject {
     } catch {
       handleError(error: error, defaultMessage: "카카오 로그인 실패")
     }
-    
-    dispatch(.setLoading(isLoading: false))
   }
   
   // 애플 로그인
   func appleLogin(idToken: String, deviceToken: String = "", nick: String? = nil) async {
     // 초기 상태 설정
-    dispatch(.setLoading(isLoading: true))
-    dispatch(.clearError)
     dispatch(.setLoginSuccess(success: false))
     
     do {
@@ -376,8 +351,6 @@ final class AuthModel: ObservableObject {
     } catch {
       handleError(error: error, defaultMessage: "애플 로그인 실패")
     }
-    
-    dispatch(.setLoading(isLoading: false))
   }
   
   // 로그아웃

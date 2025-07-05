@@ -78,7 +78,7 @@ struct EatsOrderTabContainer: View {
       .offset(y: isTabBarHidden ? 120 : 0)
       .opacity(isTabBarHidden ? 0 : 1)
       .animation(.easeOut(duration: 0.35), value: isTabBarHidden)
-      if authModel.sessionState == .refreshing || authModel.isLoading {
+      if authModel.sessionState == .refreshing {
         Color.black.opacity(0.2).ignoresSafeArea()
         ProgressView("토큰 갱신 중...")
           .progressViewStyle(CircularProgressViewStyle())
