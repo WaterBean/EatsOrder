@@ -10,6 +10,7 @@ import SwiftUI
 // MARK: - 이메일 회원가입 화면
 struct EmailSignUpScreen: View {
   @State private var state = EmailSignUpScreenState()
+  @State private var isLoading = false
   @EnvironmentObject private var authModel: AuthModel
   @Environment(\.dismiss) private var dismiss
   
@@ -213,15 +214,15 @@ extension EmailSignUpScreen {
   // 비밀번호 확인 값 변경 핸들러
   private func handleConfirmPasswordChange(_ confirmPassword: String) {
     if confirmPassword.isEmpty {
-      state.confirmPasswordValidationState = .invalid(message: "비밀번호 확인을 입력해주세요.")
+      state.confirmPasswordValidationState = .invalid(message:  "비밀번호 확인을 입력해주세요.")
       return
     }
-    
+
     if confirmPassword != state.password {
       state.confirmPasswordValidationState = .invalid(message: "비밀번호가 일치하지 않습니다.")
       return
     }
-    
+
     // 유효한 비밀번호 확인
     state.confirmPasswordValidationState = .valid(message: nil)
   }
@@ -244,26 +245,20 @@ extension EmailSignUpScreen {
   
   // 회원가입 기능
   private func signUp() {
-    // 폼이 유효하지 않으면 중단
     guard state.isFormValid else { print("검증 실패"); return }
-    
     state.isLoading = true
-    
-    // 회원가입 API 호출
     Task {
-        await authModel.join(
-          email: state.email,
-          password: state.password,
-          nick: state.nick,
-          phoneNum: state.phoneNum,
-          deviceToken: ""
-        )
-        await MainActor.run {
-          state.isLoading = false
-          // 회원가입 성공 처리 (예: 화면 닫기 또는 로그인 화면으로 이동)
-          dismiss()
-        }
-      // TODO: - 실패 시 예외처리 로직도 필요
+      await authModel.join(
+        email: state.email,
+        password: state.password,
+        nick: state.nick,
+        phoneNum: state.phoneNum,
+        deviceToken: ""
+      )
+      await MainActor.run {
+        state.isLoading = false
+        dismiss()
+      }
     }
   }
   

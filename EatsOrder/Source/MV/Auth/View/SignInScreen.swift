@@ -15,6 +15,7 @@ struct SignInScreen: View {
   @State private var isShowingEmailLogin = false
   @State private var isShowingEmailSignup = false
   @State private var navigationPath = NavigationPath()
+  @State private var isLoading = false
   
   var body: some View {
     NavigationStack(path: $navigationPath) {
@@ -40,14 +41,11 @@ struct SignInScreen: View {
       }
     }
   }
-  
+
   private func performKakaoLogin() {
-    // 로직 시작 전 상태 초기화
     authModel.dispatch(.clearError)
-    authModel.dispatch(.setLoading(isLoading: true))
-    
+    isLoading = true
     if (UserApi.isKakaoTalkLoginAvailable()) {
-      // 카카오톡 앱으로 로그인
       UserApi.shared.loginWithKakaoTalk { (oauthToken, error) in
         handleKakaoLoginResult(oauthToken: oauthToken, error: error)
       }
@@ -55,26 +53,22 @@ struct SignInScreen: View {
       // TODO: - 카카오톡 앱이 없는 경우 카카오톡 설치로 유도
     }
   }
-  
+
   // 카카오 로그인 결과 처리
   private func handleKakaoLoginResult(oauthToken: OAuthToken?, error: Error?) {
-    // 에러 처리
     if let error = error {
-      authModel.dispatch(.setLoading(isLoading: false))
+      isLoading = false
       authModel.dispatch(.setError(message: "카카오 로그인 실패: \(error.localizedDescription)"))
       return
     }
-    
-    // 토큰 유효성 검사
     guard let token = oauthToken?.accessToken else {
-      authModel.dispatch(.setLoading(isLoading: false))
+      isLoading = false
       authModel.dispatch(.setError(message: "카카오 토큰을 가져오지 못했습니다"))
       return
     }
-    
-    // 서버에 카카오 토큰 전달
     Task {
       await authModel.kakaoLogin(oauthToken: token)
+      isLoading = false
     }
   }
   
@@ -112,20 +106,91 @@ struct SignInScreen: View {
 extension SignInWithAppleButton {
   /// 애플 로그인 버튼을 앱의 디자인 스타일에 맞게 통일하는 모디파이어
   func customAppleButtonStyle(height: CGFloat = 50) -> some View {
-        self
-            .frame(height: height)
-            .padding(.horizontal, 20)
-            .clipShape(.capsule)
-            
-    }
+    self
+      .clipShape(.capsule)
+      .frame(height: height)
+      .padding(.horizontal, 20)
+
+  }
 }
 
+struct LastLoginLabel: View {
+  let type: LoginType
+  let date: Date
+
+  var body: some View {
+    HStack(spacing: 4) {
+      Image(systemName: iconName)
+        .font(.system(size: 12, weight: .bold))
+        .foregroundColor(iconColor)
+      Text("마지막 로그인 · " + dateString)
+        .font(.system(size: 12, weight: .medium))
+        .foregroundColor(.white)
+    }
+    .padding(.vertical, 4)
+    .padding(.horizontal, 10)
+    .background(labelColor.opacity(0.85))
+    .cornerRadius(14)
+    .shadow(radius: 2, y: 1)
+  }
+
+  private var iconName: String {
+    switch type {
+    case .kakao: return "message.fill"
+    case .apple: return "applelogo"
+    case .email: return "envelope.fill"
+    }
+  }
+  private var iconColor: Color {
+    switch type {
+    case .kakao: return .yellow
+    case .apple: return .black
+    case .email: return .blue
+    }
+  }
+  private var labelColor: Color {
+    switch type {
+    case .kakao: return .yellow
+    case .apple: return .gray
+    case .email: return .blue
+    }
+  }
+  private var dateString: String {
+    let formatter = DateFormatter()
+    formatter.locale = Locale(identifier: "ko_KR")
+    formatter.dateFormat = "yyyy.MM.dd"
+    return formatter.string(from: date)
+  }
+}
+
+private struct LastLoginBadgeModifier: ViewModifier {
+  let show: Bool
+  let type: LoginType
+  let date: Date?
+
+  func body(content: Content) -> some View {
+    ZStack(alignment: .bottom) {
+      content
+      if show, let date {
+        LastLoginLabel(type: type, date: date)
+          .offset(x: 8, y: 8)
+      }
+    }
+  }
+}
+
+private extension View {
+  func lastLoginBadge(show: Bool, type: LoginType, date: Date?) -> some View {
+    self.modifier(LastLoginBadgeModifier(show: show, type: type, date: date))
+  }
+}
 
 struct SignInView: View {
   @Binding var isShowingEmailLogin: Bool
   @Binding var isShowingEmailSignup: Bool
   var onKakaoLogin: () -> Void
   var onAppleSignIn: (Result<ASAuthorization, Error>) -> Void
+  @EnvironmentObject var authModel: AuthModel
   
   var body: some View {
     ZStack {
@@ -134,7 +199,7 @@ struct SignInView: View {
         .ignoresSafeArea()
       
       // 흐릿한 배경 이미지 (차량 이미지)
-      Image(systemName: "person") // 적절한 이미지로 변경하세요
+      Image("login-image")
         .resizable()
         .aspectRatio(contentMode: .fill)
         .frame(width: screenWidth)
@@ -143,7 +208,7 @@ struct SignInView: View {
         .ignoresSafeArea()
       
       VStack(spacing: 30) {
-        Spacer().frame(height: 40)
+        Spacer().frame(height: 100)
         
         // 중앙 타이틀
         VStack(spacing: 4) {
@@ -155,31 +220,26 @@ struct SignInView: View {
             .font(.Pretendard.custom(24, weight: .semibold))
             .foregroundColor(.white)
         }
-        
+
         Spacer()
-        
+
         // 로그인 버튼들
         VStack(spacing: 16) {
-          // 카카오 로그인 버튼
+          // 카카오 로그인 버튼 + 라벨
           SignInButton(
             text: "카카오로 3초만에 로그인",
             icon: "message.fill",
             backgroundColor: .yellow,
             foregroundColor: .black,
-            action: {
-              onKakaoLogin()
-            }
+            action: { onKakaoLogin() }
           )
-          
-          // 마지막 로그인 정보
-          Text("마지막 로그인 2025.05.12")
-            .font(.system(size: 14))
-            .foregroundColor(.white)
-            .padding(8)
-            .background(Color.orange.opacity(0.8))
-            .cornerRadius(20)
-          
-          // Apple 로그인 버튼
+          .lastLoginBadge(
+            show: authModel.lastLoginType == .kakao,
+            type: .kakao,
+            date: authModel.lastLoginDate
+          )
+
+          // Apple 로그인 버튼 + 라벨
           SignInWithAppleButton { request in
             request.requestedScopes = [.fullName, .email]
           } onCompletion: { result in
@@ -187,17 +247,25 @@ struct SignInView: View {
           }
           .customAppleButtonStyle()
           .signInWithAppleButtonStyle(.white)
+          .lastLoginBadge(
+            show: authModel.lastLoginType == .apple,
+            type: .apple,
+            date: authModel.lastLoginDate
+          )
           
-          // 이메일 로그인 버튼
+          // 이메일 로그인 버튼 + 라벨
           SignInButton(
             text: "이메일로 로그인",
             icon: "envelope",
             backgroundColor: .clear,
             foregroundColor: .white,
             hasBorder: true,
-            action: {
-              isShowingEmailLogin = true
-            }
+            action: { isShowingEmailLogin = true }
+          )
+          .lastLoginBadge(
+            show: authModel.lastLoginType == .email,
+            type: .email,
+            date: authModel.lastLoginDate
           )
           
           // 이메일로 회원가입 버튼
@@ -238,7 +306,7 @@ struct SignInButton: View {
         Image(systemName: icon)
           .font(.system(size: 18))
           .foregroundColor(foregroundColor)
-        
+
         Text(text)
           .font(.system(size: 16, weight: .semibold))
           .foregroundColor(foregroundColor)
@@ -264,6 +332,7 @@ struct SignInButton: View {
 struct EmailLoginScreen: View {
   @State private var email = ""
   @State private var password = ""
+  @State private var isLoading = false
   @Environment(\.dismiss) private var dismiss
   @EnvironmentObject private var authModel: AuthModel
   
@@ -271,7 +340,7 @@ struct EmailLoginScreen: View {
     EmailLoginView(
       email: $email,
       password: $password,
-      isLoading: authModel.isLoading,
+      isLoading: isLoading,
       errorMessage: authModel.errorMessage,
       onLogin: login,
       onDismiss: { dismiss() }
@@ -287,19 +356,22 @@ struct EmailLoginScreen: View {
           DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             authModel.dispatch(.setLoginSuccess(success: false))
             authModel.dispatch(.clearError)
+            isLoading = false
           }
         }
       }
     }
   }
-  
+
   private func login() {
     // 키보드 숨기기
     hideKeyboard()
     
     // 로그인 로직 처리
+    isLoading = true
     Task {
       await authModel.login(email: email, password: password)
+      isLoading = false
       // dismiss는 onReceive에서 처리
     }
   }
@@ -315,8 +387,8 @@ struct EmailLoginView: View {
   @Binding var password: String
   @State private var emailValidationState: InputField.ValidationState = .initial
   @State private var passwordValidationState: InputField.ValidationState = .initial
-  var isLoading: Bool  // 로딩 상태 추가
-  var errorMessage: String  // 에러 메시지 추가
+  var isLoading: Bool
+  var errorMessage: String
   var onLogin: () -> Void
   var onDismiss: () -> Void
   
