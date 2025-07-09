@@ -14,7 +14,7 @@ struct ProfileScreen: View {
 
   var body: some View {
     VStack(spacing: 0) {
-      ProfileView(profile: profileModel.profile)
+      ProfileView(profile: profileModel.profile, logout: authModel.logout)
         .padding(.top, 24)
         .padding(.bottom, 24)
       Divider()
@@ -30,6 +30,7 @@ struct ProfileScreen: View {
 
 struct ProfileView: View {
   let profile: Profile?
+  let logout: () -> ()
   var body: some View {
     if let profile = profile {
       VStack(spacing: 12) {
@@ -54,6 +55,13 @@ struct ProfileView: View {
         Text(profile.phoneNum ?? "")
           .font(.subheadline)
           .foregroundColor(.secondary)
+        Button {
+          logout()
+        } label: {
+          Text("로그아웃")
+            .font(.Pretendard.body2)
+            .foregroundStyle(Color.red)
+        }
       }
       .frame(maxWidth: .infinity)
     } else {

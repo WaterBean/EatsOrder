@@ -9,8 +9,6 @@ import SwiftUI
 
 struct EatsOrderTabContainer: View {
   @EnvironmentObject var authModel: AuthModel
-  @EnvironmentObject var profileModel: ProfileModel
-  @EnvironmentObject var storeModel: StoreModel
   @EnvironmentObject var orderModel: OrderModel
   @State private var isShowSignInScreen = false
   @State private var isTabBarHidden: Bool = false
@@ -78,24 +76,10 @@ struct EatsOrderTabContainer: View {
       .offset(y: isTabBarHidden ? 120 : 0)
       .opacity(isTabBarHidden ? 0 : 1)
       .animation(.easeOut(duration: 0.35), value: isTabBarHidden)
-      if authModel.sessionState == .refreshing {
-        Color.black.opacity(0.2).ignoresSafeArea()
-        ProgressView("토큰 갱신 중...")
-          .progressViewStyle(CircularProgressViewStyle())
-          .scaleEffect(1.5)
-      }
     }
     .fullScreenCover(isPresented: $isShowSignInScreen) {
       SignInScreen()
         .interactiveDismissDisabled(true)
-    }
-    .alert("세션 만료", isPresented: $authModel.showSessionExpiredAlert) {
-      Button("확인") {
-        isShowSignInScreen = true
-        authModel.showSessionExpiredAlert = false
-      }
-    } message: {
-      Text("세션이 만료되었습니다. 다시 로그인해주세요.")
     }
     .onReceive(authModel.$sessionState) { state in
       switch state {

@@ -28,9 +28,6 @@ enum AuthAction {
   case setLoginSuccess(success: Bool)
   case setJoinSuccess(success: Bool)
   
-  // 세션 만료 알림 액션
-  case showSessionExpiredAlert(show: Bool)
-
   // 이메일 검증 결과 액션
   case setEmailValidationResult(result: String)
 }
@@ -62,13 +59,12 @@ final class AuthModel: ObservableObject {
   private let tokenManager: TokenManager
   
   // 상태 관리
-  @Published var sessionState: AuthState = .initial
-  @Published var emailValidationResult: String = ""
-  @Published var errorMessage: String = ""
-  @Published var isLoggedIn: Bool = false
-  @Published var loginSuccess: Bool = false
-  @Published var joinSuccess: Bool = false
-  @Published var showSessionExpiredAlert: Bool = false
+  @Published private(set) var sessionState: AuthState = .initial
+  @Published private(set) var emailValidationResult: String = ""
+  @Published private(set) var errorMessage: String = ""
+  @Published private(set) var isLoggedIn: Bool = false
+  @Published private(set) var loginSuccess: Bool = false
+  @Published private(set) var joinSuccess: Bool = false
 
   // @UserDefault propertyWrapper 활용
   @UserDefault(key: "lastLoginType", defaultValue: "") private var lastLoginTypeRaw: String
@@ -139,10 +135,6 @@ final class AuthModel: ObservableObject {
       
     case .setJoinSuccess(let success):
       self.joinSuccess = success
-      
-      // 세션 만료 알림
-    case .showSessionExpiredAlert(let show):
-      self.showSessionExpiredAlert = show
       
       // 이메일 검증 결과
     case .setEmailValidationResult(let result):
@@ -227,7 +219,6 @@ final class AuthModel: ObservableObject {
     dispatch(.setLoginSuccess(success: false))
     dispatch(.setSessionState(state: .expired))
     dispatch(.setError(message: "세션이 만료되었습니다. 다시 로그인해주세요."))
-    dispatch(.showSessionExpiredAlert(show: true))
     
     print("세션 만료 처리 완료")
   }
@@ -360,7 +351,6 @@ final class AuthModel: ObservableObject {
     dispatch(.setLoggedIn(isLoggedIn: false))
     dispatch(.setLoginSuccess(success: false))
     dispatch(.setSessionState(state: .expired))
-    dispatch(.showSessionExpiredAlert(show: false))
     dispatch(.clearError)
     
     print("로그아웃 완료")
