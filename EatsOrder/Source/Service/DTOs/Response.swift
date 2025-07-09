@@ -178,11 +178,3 @@ struct ResponseDTOs {
 
 }
 
-// ISO8601 String -> Date 변환 헬퍼
-extension String {
-  func toDate() -> Date? {
-    let formatter = ISO8601DateFormatter()
-    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-    return formatter.date(from: self)
-  }
-}
