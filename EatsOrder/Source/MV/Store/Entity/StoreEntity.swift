@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import EOCore
 
 struct StoreInfo: Entity {
   let storeId: String

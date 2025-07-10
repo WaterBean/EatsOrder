@@ -14,6 +14,7 @@
 		55B78D982E0140ED00BE8AFE /* FirebaseInAppMessaging-Beta in Frameworks */ = {isa = PBXBuildFile; productRef = 55B78D972E0140ED00BE8AFE /* FirebaseInAppMessaging-Beta */; };
 		55B78D9A2E0140ED00BE8AFE /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 55B78D992E0140ED00BE8AFE /* FirebaseMessaging */; };
 		55B78D9D2E01416100BE8AFE /* SocketIO in Frameworks */ = {isa = PBXBuildFile; productRef = 55B78D9C2E01416100BE8AFE /* SocketIO */; };
+		55B7909A2E1F949000BE8AFE /* EOCore in Frameworks */ = {isa = PBXBuildFile; productRef = 55B790992E1F949000BE8AFE /* EOCore */; };
 		55FB97B32DCDECB20094B3B8 /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = 55FB97B22DCDECB20094B3B8 /* .gitignore */; };
 		55FB98742DD9C5280094B3B8 /* KakaoSDK in Frameworks */ = {isa = PBXBuildFile; productRef = 55FB98732DD9C5280094B3B8 /* KakaoSDK */; };
 		55FB98762DD9C5280094B3B8 /* KakaoSDKAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 55FB98752DD9C5280094B3B8 /* KakaoSDKAuth */; };
@@ -81,6 +82,7 @@
 		55FB97852DCDEB3B0094B3B8 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
+				55B7909A2E1F949000BE8AFE /* EOCore in Frameworks */,
 				55B78D922E0140ED00BE8AFE /* FirebaseAnalytics in Frameworks */,
 				55FB987A2DD9C5280094B3B8 /* KakaoSDKCertCore in Frameworks */,
 				55FB98782DD9C5280094B3B8 /* KakaoSDKCert in Frameworks */,
@@ -159,6 +161,7 @@
 				55B78D972E0140ED00BE8AFE /* FirebaseInAppMessaging-Beta */,
 				55B78D992E0140ED00BE8AFE /* FirebaseMessaging */,
 				55B78D9C2E01416100BE8AFE /* SocketIO */,
+				55B790992E1F949000BE8AFE /* EOCore */,
 			);
 			productName = EatsOrder;
 			productReference = 55FB97882DCDEB3B0094B3B8 /* EatsOrder.app */;
@@ -243,6 +246,7 @@
 				55A764F52DFD67A400E90C93 /* XCRemoteSwiftPackageReference "iamport-ios" */,
 				55B78D902E0140ED00BE8AFE /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				55B78D9B2E01416100BE8AFE /* XCRemoteSwiftPackageReference "socket.io-client-swift" */,
+				55B790982E1F949000BE8AFE /* XCLocalSwiftPackageReference "../EOCore" */,
 			);
 			preferredProjectObjectVersion = 90;
 			productRefGroup = 55FB97892DCDEB3B0094B3B8 /* Products */;
@@ -625,6 +629,13 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		55B790982E1F949000BE8AFE /* XCLocalSwiftPackageReference "../EOCore" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../EOCore;
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCRemoteSwiftPackageReference section */
 		55A764F52DFD67A400E90C93 /* XCRemoteSwiftPackageReference "iamport-ios" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -695,6 +706,10 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 55B78D9B2E01416100BE8AFE /* XCRemoteSwiftPackageReference "socket.io-client-swift" */;
 			productName = SocketIO;
+		};
+		55B790992E1F949000BE8AFE /* EOCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = EOCore;
 		};
 		55FB98732DD9C5280094B3B8 /* KakaoSDK */ = {
 			isa = XCSwiftPackageProductDependency;

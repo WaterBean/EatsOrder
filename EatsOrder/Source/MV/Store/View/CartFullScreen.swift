@@ -9,17 +9,6 @@ import SwiftUI
 import WebKit
 import iamport_ios
 
-struct PaymentRequest: Entity {
-  let pg: String
-  let merchant_uid: String
-  let amount: Int
-  let pay_method: String
-  let name: String
-  let buyer_name: String
-  let app_scheme: String
-  var id: String { merchant_uid }
-}
-
 struct PaymentWebViewModeView: UIViewControllerRepresentable {
   let userCode: String
   let orderCode: String

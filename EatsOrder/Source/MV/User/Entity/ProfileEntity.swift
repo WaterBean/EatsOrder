@@ -5,7 +5,7 @@
 //  Created by 한수빈 on 7/1/25.
 //
 
-import Foundation
+import EOCore
 
 struct Profile: Entity {
   let userId: String

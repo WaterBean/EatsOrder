@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import EOCore
 import KakaoSDKAuth
 import KakaoSDKUser
 

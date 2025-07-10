@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import EOCore
 
 final class TokenManager {
   @UserDefault(key: accessTokenKey, defaultValue: "") var accessToken

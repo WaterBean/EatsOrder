@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import EOCore
 
 // 주문 메뉴 항목
 struct CartMenuItem: Entity {
@@ -99,4 +100,15 @@ struct StatusTimeline: Entity {
   let isCompleted: Bool
   let changedAt: Date?
   var id: String { status.rawValue }
+}
+
+struct PaymentRequest: Entity {
+  let pg: String
+  let merchant_uid: String
+  let amount: Int
+  let pay_method: String
+  let name: String
+  let buyer_name: String
+  let app_scheme: String
+  var id: String { merchant_uid }
 }
