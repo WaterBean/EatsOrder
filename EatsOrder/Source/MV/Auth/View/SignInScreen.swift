@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import EOCore
 import KakaoSDKUser
 import KakaoSDKAuth
 import AuthenticationServices

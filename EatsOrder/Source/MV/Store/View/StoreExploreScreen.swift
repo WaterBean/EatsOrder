@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import EOCore
 
 struct StoreExploreScreen: View {
   @EnvironmentObject var storeModel: StoreModel

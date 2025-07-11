@@ -92,7 +92,7 @@ final class ChatModel: ObservableObject {
     let myUserId = ""  // TODO: 내 userId로 교체
     let myUser = ChatParticipant(userId: myUserId, nick: "나", profileImage: nil)
     let tempMessage = Chat(
-      chatId: tempId, roomId: roomId, content: content, createdAt: Date().iso8601String,
+      chatId: tempId, roomId: roomId, content: content, createdAt: Date().ISO8601Format(),
       sender: myUser, files: nil, sendState: .sending)
     messages.append(tempMessage)
     do {
