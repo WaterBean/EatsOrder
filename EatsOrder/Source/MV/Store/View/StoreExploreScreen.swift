@@ -486,7 +486,7 @@ struct PopularStoresListView: View {
           .frame(width: 16, height: 16)
           .padding(.leading, 10)
           .foregroundColor(.blackSprout)
-        Text("\(store.geolocation.longitude)km")
+        Text(String(format: "%.1fkm", store.geolocation.longitude/100))
           .font(.Pretendard.body3)
           .foregroundColor(.g75)
         Image("time")

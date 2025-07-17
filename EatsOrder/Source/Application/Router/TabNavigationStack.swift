@@ -63,7 +63,7 @@ struct ProfileNavigationStack: View {
   var body: some View {
     NavigationStack(path: $router.profilePath) {
       ProfileScreen()
-              .onNavigate { navType in
+        .onNavigate { navType in
           switch navType {
           case .push(let route):
             if let navigatedRoute = route as? ProfileRoute {
@@ -74,7 +74,7 @@ struct ProfileNavigationStack: View {
           }
         }
         .navigationDestination(for: ProfileRoute.self) { $0.destinationScreen() }
-
+      
     }
   }
 }

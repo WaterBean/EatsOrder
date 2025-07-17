@@ -131,7 +131,7 @@ struct StoreListCellView: View {
           .resizable()
           .frame(width: 20, height: 20)
           .foregroundColor(.blackSprout)
-        Text(String(format: "%.1fkm", store.geolocation.longitude))
+        Text(String(format: "%.1fkm", store.geolocation.longitude/100))
           .font(.Pretendard.body2)
           .foregroundColor(.g60)
       }

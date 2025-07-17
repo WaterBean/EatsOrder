@@ -74,6 +74,6 @@ final class ChatSocketService {
           let profileImage = senderDict["profileImage"] as? String? else { return nil }
     let sender = ChatParticipant(userId: senderId, nick: nick, profileImage: profileImage)
     let files = dict["files"] as? [String]
-    return Chat(chatId: chatId, roomId: roomId, content: content, createdAt: createdAt, sender: sender, files: files)
+    return Chat(chatId: chatId, roomId: roomId, content: content, createdAt: createdAt.toDate(), sender: sender, files: files)
   }
 }

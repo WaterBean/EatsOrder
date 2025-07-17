@@ -282,11 +282,6 @@ struct SignInView: View {
         
         Spacer()
         
-        // 하단 인디케이터
-        RoundedRectangle(cornerRadius: 3)
-          .frame(width: 100, height: 6)
-          .foregroundColor(.white.opacity(0.5))
-          .padding(.bottom, 10)
       }
     }
   }
