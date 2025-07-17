@@ -35,10 +35,16 @@ struct ProfileView: View {
     if let profile = profile {
       VStack(spacing: 12) {
         if let url = profile.profileImage, !url.isEmpty {
-          AsyncImage(url: URL(string: url)) { image in
+          CachedAsyncImage(url: url) { image in
             image.resizable()
           } placeholder: {
-            Color.gray.opacity(0.2)
+            Image(systemName: "person.crop.circle.fill")
+              .resizable()
+              .foregroundColor(.blackSprout)
+          } errorView: { _ in
+            Image(systemName: "person.crop.circle.fill")
+              .resizable()
+              .foregroundColor(.blackSprout)
           }
           .frame(width: 80, height: 80)
           .clipShape(Circle())

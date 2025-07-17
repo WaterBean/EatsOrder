@@ -40,16 +40,6 @@ struct ChattingRoomListView: View {
         .listStyle(.plain)
       }
     }
-    .navigationTitle("채팅")
-    .toolbar {
-      ToolbarItem(placement: .navigationBarTrailing) {
-        Button {
-          // 채팅방 생성/검색 등
-        } label: {
-          Image(systemName: "plus.bubble")
-        }
-      }
-    }
     .onAppear {
       if chatModel.rooms.isEmpty {
         Task { await chatModel.fetchRooms() }
@@ -90,7 +80,7 @@ struct ChatRoomCell: View {
       }
       Spacer()
       VStack(alignment: .trailing, spacing: 4) {
-        Text(room.lastMessage?.createdAt.prefix(10) ?? "")
+        Text(room.lastMessage?.createdAt.ISO8601Format().prefix(10) ?? "")
           .font(.caption)
           .foregroundColor(.secondary)
         if room.unreadCount > 0 {

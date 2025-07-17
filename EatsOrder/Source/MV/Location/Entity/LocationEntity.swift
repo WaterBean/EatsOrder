@@ -6,7 +6,7 @@
 //
 
 import CoreLocation
-import Foundation
+import EOCore
 
 // 위치 정보 모델
 struct GeoLocation: Entity {

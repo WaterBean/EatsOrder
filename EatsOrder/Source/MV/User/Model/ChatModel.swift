@@ -63,7 +63,7 @@ final class ChatModel: ObservableObject {
     do {
       let response = try await fetchMessages(roomId: roomId, next: nil)
       messages = response
-      nextCursor = response.last?.createdAt
+      nextCursor = response.last?.createdAt.toString()
       hasMore = response.count == 20
     } catch {
       // 에러 처리 필요시 추가
@@ -78,7 +78,7 @@ final class ChatModel: ObservableObject {
     do {
       let response = try await fetchMessages(roomId: roomId, next: nextCursor)
       messages.insert(contentsOf: response, at: 0)
-      nextCursor = response.last?.createdAt
+      nextCursor = response.last?.createdAt.toString()
       hasMore = response.count == 20
     } catch {
       // 에러 처리 필요시 추가
@@ -92,7 +92,7 @@ final class ChatModel: ObservableObject {
     let myUserId = ""  // TODO: 내 userId로 교체
     let myUser = ChatParticipant(userId: myUserId, nick: "나", profileImage: nil)
     let tempMessage = Chat(
-      chatId: tempId, roomId: roomId, content: content, createdAt: Date().iso8601String,
+      chatId: tempId, roomId: roomId, content: content, createdAt: Date(),
       sender: myUser, files: nil, sendState: .sending)
     messages.append(tempMessage)
     do {
@@ -139,7 +139,7 @@ extension ResponseDTOs.ChatRoom {
       roomId: roomId,
       participants: participants.map { $0.toEntity() },
       lastMessage: lastChat?.toEntity(),
-      updatedAt: updatedAt,
+      updatedAt: updatedAt.toDate(),
       unreadCount: 0  // 서버 응답에 unreadCount가 있으면 매핑
     )
   }
@@ -161,7 +161,7 @@ extension ResponseDTOs.Chat {
       chatId: chatId,
       roomId: roomId,
       content: content,
-      createdAt: createdAt,
+      createdAt: createdAt.toDate() ?? .now,
       sender: sender.toEntity(),
       files: files
     )

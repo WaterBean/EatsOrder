@@ -5,7 +5,7 @@
 //  Created by 한수빈 on 2025/06/02.
 //
 
-import Foundation
+import EOCore
 
 struct Token: Entity {
   let accessToken: String

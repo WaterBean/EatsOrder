@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import EOCore
 import iamport_ios
 
 @MainActor
@@ -193,7 +194,7 @@ private extension ResponseDTOs.Store {
       totalOrderCount: 0,  // 서버 응답에 따라 매핑 필요
       totalReviewCount: 0,  // 서버 응답에 따라 매핑 필요
       geolocation: GeoLocation(longitude: geolocation.longitude, latitude: geolocation.latitude),
-      distance: nil,  // 서버 응답에 따라 매핑 필요
+      distance: Double.random(in: 0.0...2.0),  // 서버 응답에 따라 매핑 필요
       createdAt: createdAt,
       updatedAt: updatedAt
     )

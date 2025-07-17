@@ -12,7 +12,7 @@ final class ProfileModel: ObservableObject {
 
   let service: NetworkProtocol
 
-  @Published var profile: Profile? = nil
+  @Published var profile = Profile(userId: "", email: "", nick: "", profileImage: nil, phoneNum: "")
   
   init(service: NetworkProtocol) {
     self.service = service

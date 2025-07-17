@@ -6,10 +6,12 @@
 //
 
 import Combine
+import SwiftUI
+import EOCore
 import KakaoSDKAuth
 import KakaoSDKCommon
-import SwiftUI
 import iamport_ios
+
 
 @main
 struct EatsOrderApp: App {

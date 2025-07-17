@@ -6,12 +6,13 @@
 //
 
 import Foundation
+import EOCore
 
 struct ChatRoom: Entity {
   let roomId: String
   let participants: [ChatParticipant]
   let lastMessage: Chat?
-  let updatedAt: String
+  let updatedAt: Date
   let unreadCount: Int
 
   var id: String { roomId }
@@ -32,7 +33,7 @@ struct Chat: Entity {
   let chatId: String
   let roomId: String
   let content: String
-  let createdAt: String
+  let createdAt: Date
   let sender: ChatParticipant
   let files: [String]?
   var sendState: ChatSendState? = nil

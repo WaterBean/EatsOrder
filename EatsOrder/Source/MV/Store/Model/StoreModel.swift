@@ -222,3 +222,4 @@ final class StoreModel: ObservableObject {
     print("\(defaultMessage): \(error.localizedDescription)")
   }
 }
+

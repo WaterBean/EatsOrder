@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import EOCore
 
 // MARK: - Screen (Container)
 struct StoreDetailScreen: View {
